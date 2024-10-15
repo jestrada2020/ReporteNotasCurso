@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INFORME del CURSO V10 - APP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        input, select {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .hidden {
+            display: none;
+        }
+        .rojo {
+            color: red;
+            font-weight: bold;
+        }
+        .azul {
+            color: blue;
+            font-weight: bold;
+        }
+        .conteo {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+        }
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .hidden-column {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Generador de reportes por competencias</h1>
+
+        <!-- Interruptor para mostrar o no Nombres y Apellidos -->
+        <h3>Incluir Nombres y Apellidos en el Informe</h3>
+        <label class="switch">
+            <input type="checkbox" id="toggle-nombres" checked>
+            <span class="slider"></span>
+        </label>
+
+        <!-- Tabla de opciones -->
+        <table>
+            <tr>
+                <td><h2>Cargar Archivo de Estudiantes</h2></td>
+                <td><input type="file" id="file-input" accept=".xlsx, .xls"></td>
+            </tr>
+
+            <!-- Criterio para seleccionar evaluación -->
+            <tr>
+                <td><h3>Seleccione una evaluación o combinación de evaluaciones</h3></td>
+                <td>
+                    <select id="evaluacion-select">
+                        <option value="">Seleccione una evaluación</option>
+                        <option value="1P">1P</option>
+                        <option value="2P">2P</option>
+                        <option value="3P">3P</option>
+                        <option value="4P">4P</option>
+                        <option value="Q1">Q1</option>
+                        <option value="Q2">Q2</option>
+                        <option value="Q3">Q3</option>
+                        <option value="Q4">Q4</option>
+                        <!-- Combinaciones de evaluaciones adicionales -->
+                        <option value="1P-2P">1P y 2P</option>
+                        <option value="2P-3P">2P y 3P</option>
+                        <option value="3P-4P">3P y 4P</option>
+                        <option value="Q1-Q2">Q1 y Q2</option>
+                        <option value="Q2-Q3">Q2 y Q3</option>
+                        <option value="Q3-Q4">Q3 y Q4</option>
+                        <option value="2P-Q2">2P y Q2</option>
+                        <option value="2P-Q3">2P y Q3</option>
+                        <option value="3P-Q3">3P y Q3</option>
+                        <option value="4P-Q4">4P y Q4</option>
+                        <option value="1P-Q1">1P y Q1</option>
+                        <option value="1P-Q1-Q2">1P, Q1 y Q2</option>
+                        <option value="1P-Q1-Q2-2P">1P, Q1, Q2 y 2P</option>
+                        <option value="1P-Q1-Q2-2P-Q3">1P, Q1, Q2, 2P y Q3</option>
+                        <option value="1P-Q1-Q2-2P-Q3-3P">1P, Q1, Q2, 2P, Q3 y 3P</option>
+                        <option value="1P-Q1-Q2-2P-Q3-3P-Q4">1P, Q1, Q2, 2P, Q3, 3P y Q4</option>
+                        <option value="1P-Q1-Q2-2P-Q3-3P-Q4-4P">1P, Q1, Q2, 2P, Q3, 3P, Q4 y 4P</option>
+                    </select>
+                </td>
+            </tr>
+
+            <!-- Criterio para seleccionar tipo de comparación -->
+            <tr>
+                <td><h3>Seleccione el tipo de comparación</h3></td>
+                <td>
+                    <select id="comparacion-select">
+                        <option value="menor">Menor que</option>
+                        <option value="menor-igual">Menor o igual que</option>
+                        <option value="mayor">Mayor que</option>
+                        <option value="mayor-igual">Mayor o igual que</option>
+                        <option value="igual">Igual que</option>
+                    </select>
+                </td>
+            </tr>
+
+            <!-- Criterio para ingresar el valor de la nota -->
+            <!-- Criterio para ingresar el valor de la nota -->
+            <tr>
+                <td><h3>Ingrese el valor de la nota</h3></td>
+                <td><input type="number" step="0.1" id="valor-nota-input" placeholder="Ingrese el valor"></td>
+            </tr>
+
+            <!-- Botón para generar el reporte de competencias basado en criterios -->
+            <tr>
+                <td></td>
+                <td><button id="generar-reporte-evaluacion">Generar Reporte por Evaluación</button></td>
+            </tr>
+        </table>
+
+        <!-- Vista previa del informe de competencias -->
+        <div id="vista-previa-competencias-section" class="hidden">
+            <h2>Informe de Competencias</h2>
+            <p id="conteo-estudiantes" class="conteo"></p>
+            <p id="contador-aprobados" class="conteo"></p>
+            <p id="contador-no-aprobados" class="conteo"></p>
+            <table id="informe-competencias">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th class="col-nombres">Estudiante</th>
+                        <th>Evaluación</th>
+                        <th>Notas Evaluación</th>
+                        <th>Acumulado (%)</th>
+                        <th>Observación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Datos de competencias -->
+                </tbody>
+            </table>
+            <button id="descargar-pdf-competencias" class="hidden">Descargar Informe en PDF</button>
+        </div>
+
+        <!-- Selección de estudiante y reporte general -->
+        <h3>Seleccione un estudiante</h3>
+        <select id="estudiante-select">
+            <option value="">Seleccione un estudiante</option>
+        </select>
+        <button id="generar-reporte-estudiante">Generar Reporte General de Notas por Estudiante</button>
+
+        <!-- Vista previa del informe general de notas del estudiante -->
+        <div id="vista-previa-notas-estudiante-section" class="hidden">
+            <h2>Informe General de Notas del Estudiante</h2>
+            <table id="informe-notas-estudiante">
+                <thead>
+                    <tr>
+                        <th>Evaluación</th>
+                        <th>Fecha de Evaluación</th>
+                        <th>Nota</th>
+                        <th>Competencias</th>
+                        <th>Acumulado (%)</th>
+                        <th>Observación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Datos de las evaluaciones del estudiante -->
+                </tbody>
+            </table>
+            <button id="descargar-pdf-notas-estudiante" class="hidden">Descargar Informe en PDF</button>
+        </div>
+
+        <!-- Bibliotecas necesarias -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+        <script>
+            document.getElementById('file-input').addEventListener('change', handleFileUpload);
+            document.getElementById('generar-reporte-evaluacion').addEventListener('click', generarReporteEvaluacion);
+            document.getElementById('generar-reporte-estudiante').addEventListener('click', generarReporteEstudiante);
+            document.getElementById('toggle-nombres').addEventListener('change', toggleNombresColumn);
+
+            let estudiantes = [];
+
+            function toggleNombresColumn() {
+                const incluirNombres = document.getElementById('toggle-nombres').checked;
+                const colNombres = document.querySelectorAll('.col-nombres');
+                colNombres.forEach(col => {
+                    if (incluirNombres) {
+                        col.classList.remove('hidden-column');
+                    } else {
+                        col.classList.add('hidden-column');
+                    }
+                });
+            }
+
+            function handleFileUpload(event) {
+                const file = event.target.files[0];
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    estudiantes = XLSX.utils.sheet_to_json(worksheet);
+
+                    cargarEstudiantes(estudiantes);
+                };
+
+                reader.readAsArrayBuffer(file);
+            }
+
+            function cargarEstudiantes(estudiantes) {
+                const selectEstudiante = document.getElementById('estudiante-select');
+                selectEstudiante.innerHTML = '<option value="">Seleccione un estudiante</option>';
+                estudiantes.forEach(estudiante => {
+                    const nombreCompleto = estudiante['Nombres y Apellidos'] || `${estudiante['Nombres']} ${estudiante['Apellidos']}`;
+                    const option = document.createElement('option');
+                    option.value = estudiante.ID;
+                    option.textContent = nombreCompleto;
+                    selectEstudiante.appendChild(option);
+                });
+
+                document.getElementById('generar-reporte-evaluacion').classList.remove('hidden');
+                document.getElementById('generar-reporte-estudiante').classList.remove('hidden');
+            }
+
+            function generarReporteEvaluacion() {
+                const tabla = document.getElementById('informe-competencias').querySelector('tbody');
+                const conteoEstudiantes = document.getElementById('conteo-estudiantes');
+                const evaluacionSeleccionada = document.getElementById('evaluacion-select').value;
+                const comparacionSeleccionada = document.getElementById('comparacion-select').value;
+                const valorNota = parseFloat(document.getElementById('valor-nota-input').value);
+
+                if (!evaluacionSeleccionada || isNaN(valorNota)) {
+                    alert('Seleccione una evaluación y un valor válido');
+                    return;
+                }
+
+                let contadorAprobados = 0;
+                let contadorNoAprobados = 0;
+                let contadorEstudiantes = 0;
+                tabla.innerHTML = ''; // Limpiar tabla
+
+                estudiantes.forEach(estudiante => {
+                    const nombreCompleto = estudiante['Nombres y Apellidos'] || `${estudiante['Nombres']} ${estudiante['Apellidos']}`;
+                    let notasCumplenCriterio = true;
+                    let acumuladoTotal = 0;
+                    let notasEvaluaciones = [];
+
+                    const evaluaciones = evaluacionSeleccionada.split('-');
+                    evaluaciones.forEach(evaluacion => {
+                        const notaEvaluacion = parseFloat(estudiante[evaluacion]);
+                        if (!isNaN(notaEvaluacion)) {
+                            let cumpleCriterio = false;
+                            switch (comparacionSeleccionada) {
+                                case 'menor':
+                                    cumpleCriterio = notaEvaluacion < valorNota;
+                                    break;
+                                case 'menor-igual':
+                                    cumpleCriterio = notaEvaluacion <= valorNota;
+                                    break;
+                                case 'mayor':
+                                    cumpleCriterio = notaEvaluacion > valorNota;
+                                    break;
+                                case 'mayor-igual':
+                                    cumpleCriterio = notaEvaluacion >= valorNota;
+                                    break;
+                                case 'igual':
+                                    cumpleCriterio = Math.abs(notaEvaluacion - valorNota) < 0.01;
+                                    break;
+                            }
+
+                            if (!cumpleCriterio) {
+                                notasCumplenCriterio = false;
+                            }
+
+                            const pesoEvaluacion = pesosEvaluaciones[evaluacion];
+                            acumuladoTotal += (notaEvaluacion * pesoEvaluacion) / 100;
+                            notasEvaluaciones.push(`Nota: ${notaEvaluacion} (${evaluacion})`);
+                        } else {
+                            notasCumplenCriterio = false;
+                        }
+                    });
+
+                    if (!notasCumplenCriterio) {
+                        return;
+                    }
+
+                    contadorEstudiantes++;
+                    const observacion = calcularObservacion(acumuladoTotal, evaluacionSeleccionada);
+                    let claseResultado = 'rojo';  // Clase roja por defecto para no aprobados
+
+                    if (observacion === 'Aprobado') {
+                        claseResultado = 'azul'; // Si es aprobado, usar clase azul
+                        contadorAprobados++;
+                    } else {
+                        contadorNoAprobados++;
+                    }
+
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `
+                        <td>${estudiante.ID}</td>
+                        <td class="col-nombres">${nombreCompleto}</td>
+                        <td>${evaluacionSeleccionada}</td>
+                        <td>${notasEvaluaciones.join(', ')}</td>
+                        <td>${acumuladoTotal.toFixed(2)}</td>
+                        <td class="${claseResultado}">${observacion}</td>
+                    `;
+                    tabla.appendChild(fila);
+                });
+
+                conteoEstudiantes.textContent = `Estudiantes que cumplen el criterio: ${contadorEstudiantes}`;
+                document.getElementById('contador-aprobados').textContent = `Aprobados: ${contadorAprobados}`;
+                document.getElementById('contador-no-aprobados').textContent = `No Aprobados: ${contadorNoAprobados}`;
+                
+                document.getElementById('vista-previa-competencias-section').classList.remove('hidden');
+                document.getElementById('descargar-pdf-competencias').classList.remove('hidden');
+            }
+
+            
+
+            function calcularObservacion(acumulado, evaluacionesProcesadas) {
+                let observacion = "No Aprobado";
+
+                switch (evaluacionesProcesadas) {
+                    case '1P':
+                        if (acumulado >= 0.60) observacion = "Aprobado";
+                        break;
+                    case 'Q1':
+                        if (acumulado >= 0.15) observacion = "Aprobado";
+                        break;
+                    case '1P-Q1':
+                        if (acumulado >= 0.75) observacion = "Aprobado";
+                        break;
+                    case '1P-Q1-Q2':
+                        if (acumulado >= 0.90) observacion = "Aprobado";
+                        break;
+                    case '1P-Q1-Q2-2P':
+                        if (acumulado >= 1.50) observacion = "Aprobado";
+                        break;
+                    case '1P-Q1-Q2-2P-Q3':
+                        if (acumulado >= 1.65) observacion = "Aprobado";
+                        break;
+                    case '1P-Q1-Q2-2P-Q3-3P':
+                        if (acumulado >= 2.25) observacion = "Aprobado";
+                        break;
+                    case '1P-Q1-Q2-2P-Q3-3P-Q4':
+                        if (acumulado >= 2.40) observacion = "Aprobado";
+                        break;
+                    case '1P-Q1-Q2-2P-Q3-3P-Q4-4P':
+                        if (acumulado >= 3.00) observacion = "Aprobado";
+                        break;
+                }
+
+                return observacion;
+            }
+
+            function generarReporteEstudiante() {
+                const tabla = document.getElementById('informe-notas-estudiante').querySelector('tbody');
+                const estudianteSeleccionado = document.getElementById('estudiante-select').value;
+
+                if (!estudianteSeleccionado) {
+                    alert('Seleccione un estudiante');
+                    return;
+                }
+
+                const estudiante = estudiantes.find(e => e.ID.toString() === estudianteSeleccionado);
+                const nombreCompleto = estudiante['Nombres y Apellidos'] || `${estudiante['Nombres']} ${estudiante['Apellidos']}`;
+
+                tabla.innerHTML = ''; // Limpiar tabla anterior
+
+                const evaluaciones = ['1P', '2P', '3P', '4P', 'Q1', 'Q2', 'Q3', 'Q4'];
+                let totalAcumulado = 0;
+
+                evaluaciones.forEach(evaluacion => {
+                    const notaEvaluacion = parseFloat(estudiante[evaluacion]);
+                    const fechaEvaluacion = fechasEvaluaciones[evaluacion];
+                    const pesoEvaluacion = pesosEvaluaciones[evaluacion];
+                    let resultado, claseResultado, acumulado;
+
+                    if (isNaN(notaEvaluacion)) {
+                        resultado = "Aún no ha presentado la evaluación";
+                        claseResultado = 'rojo';  // Clase roja para no presentado
+                        acumulado = 0;
+                    } else {
+                        acumulado = (notaEvaluacion * pesoEvaluacion) / 100;
+                        totalAcumulado += acumulado;
+
+                        if (notaEvaluacion < 3.0) {
+                            const competencias = obtenerCompetenciasPorEvaluacion(evaluacion);
+                            resultado = `Nota: ${notaEvaluacion} - Competencias no alcanzadas: ${competencias}`;
+                            claseResultado = 'rojo';  // Clase roja para no alcanzadas
+                        } else {
+                            resultado = `Nota: ${notaEvaluacion} - Cumple las competencias exigidas`;
+                            claseResultado = 'azul';  // Clase azul para cumplido
+                        }
+                    }
+
+                    const observacion = calcularObservacion(totalAcumulado, evaluaciones.slice(0, evaluaciones.indexOf(evaluacion) + 1).join('-'));
+
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `
+                        <td>${evaluacion}</td>
+                        <td>${fechaEvaluacion}</td>
+                        <td class="${claseResultado}">${notaEvaluacion || 'Aún no ha presentado'}</td>
+                        <td>${resultado}</td>
+                        <td>${acumulado.toFixed(2)}</td>
+                        <td>${observacion}</td>
+                    `;
+                    tabla.appendChild(fila);
+                });
+
+                const filaTotal = document.createElement('tr');
+                filaTotal.innerHTML = `
+                    <td colspan="4"><strong>Total Acumulado</strong></td>
+                    <td><strong>${totalAcumulado.toFixed(2)}</strong></td>
+                    <td><strong>${calcularObservacion(totalAcumulado, '1P-Q1-Q2-2P-Q3-3P-Q4-4P')}</strong></td>
+                `;
+                tabla.appendChild(filaTotal);
+
+                document.getElementById('vista-previa-notas-estudiante-section').classList.remove('hidden');
+                document.getElementById('descargar-pdf-notas-estudiante').classList.remove('hidden');
+            }
+
+            const fechasEvaluaciones = {
+                '1P': 'Agosto 14', '2P': 'Septiembre 6', '3P': 'Octubre 2', '4P': 'Noviembre 6',
+                'Q1': 'Agosto 7', 'Q2': 'Septiembre 4', 'Q3': 'Septiembre 27', 'Q4': 'Octubre 25'
+            };
+
+            const pesosEvaluaciones = {
+                '1P': 20, '2P': 20, '3P': 20, '4P': 20,
+                'Q1': 5, 'Q2': 5, 'Q3': 5, 'Q4': 5
+            };
+
+            function obtenerCompetenciasPorEvaluacion(evaluacion) {
+                const competenciasPorEvaluacion = {
+                    '1P': 'Competencia 1, Competencia 2',
+                    '2P': 'Competencia 3, Competencia 4',
+                    '3P': 'Competencia 5, Competencia 6',
+                    '4P': 'Competencia 7, Competencia 8',
+                    'Q1': 'Competencia 9',
+                    'Q2': 'Competencia 10',
+                    'Q3': 'Competencia 11',
+                    'Q4': 'Competencia 12',
+                };
+
+                return competenciasPorEvaluacion[evaluacion] || 'Ninguna competencia';
+            }
+
+            // Función para calcular la observación según el acumulado y las evaluaciones procesadas
+            function calcularObservacion(acumulado, evaluacionesProcesadas) {
+                let observacion = "No Aprobado";
+
+                switch (evaluacionesProcesadas) {
+                    case '1P':
+                        if (acumulado >= 0.60) observacion = "Aprobado";
+                        break;
+                    case 'Q1':
+                        if (acumulado >= 0.15) observacion = "Aprobado";
+                        break;
+                    case '1P-Q1':
+                        if (acumulado >= 0.75) observacion = "Aprobado";
+                        break;
+                    case '1P-Q1-Q2':
+                        if (acumulado >= 0.90) observacion = "Aprobado";
+                        break;
+                    case '1P-Q1-Q2-2P':
+                        if (acumulado >= 1.50) observacion = "Aprobado";
+                        break;
+                    case '1P-Q1-Q2-2P-Q3':
+                        if (acumulado >= 1.65) observacion = "Aprobado";
+                        break;
+                    case '1P-Q1-Q2-2P-Q3-3P':
+                        if (acumulado >= 2.25) observacion = "Aprobado";
+                        break;
+                    case '1P-Q1-Q2-2P-Q3-3P-Q4':
+                        if (acumulado >= 2.40) observacion = "Aprobado";
+                        break;
+                    case '1P-Q1-Q2-2P-Q3-3P-Q4-4P':
+                        if (acumulado >= 3.00) observacion = "Aprobado";
+                        break;
+                }
+
+                return observacion;
+            }
+
+            // Función para descargar el informe general del estudiante en PDF
+            document.getElementById('descargar-pdf-notas-estudiante').addEventListener('click', function () {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                doc.text("Informe General de Notas del Estudiante", 20, 20);
+
+                doc.autoTable({
+                    html: '#informe-notas-estudiante',
+                    startY: 30
+                });
+
+                doc.save('reporte_general_notas_estudiante.pdf');
+            });
+
+        </script>
+    </div>
+</body>
+</html>
