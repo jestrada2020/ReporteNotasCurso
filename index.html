@@ -174,6 +174,29 @@
             </tr>
 
             <!-- Criterio para ingresar el valor de la nota -->
+
+            <!-- Criterio para ingresar el acumulado mínimo -->
+            <h3>Ingrese el valor de Acumulado Mínimo (%) para el Reporte Final</h3>
+            <input type="number" step="0.1" id="valor-acumulado-minimo" placeholder="Ingrese el valor mínimo del acumulado">
+
+
+            <!-- Criterio para seleccionar el tipo de comparación -->
+            <h3>Seleccione el tipo de comparación para el Acumulado Final</h3>
+            <select id="comparacion-acumulado-select">
+                <option value="mayor">Mayor que</option>
+                <option value="mayor-igual">Mayor o igual que</option>
+                <option value="menor">Menor que</option>
+                <option value="menor-igual">Menor o igual que</option>
+                <option value="igual">Igual que</option>
+            </select>
+
+
+
+            <!-- Sección para generar el reporte del Acumulado Final -->
+            <h3>Generar Reporte de Acumulado Final</h3>
+            <button id="generar-reporte-acumulado-final">Generar Reporte por Acumulado Final</button>
+
+
             <!-- Criterio para ingresar el valor de la nota -->
             <tr>
                 <td><h3>Ingrese el valor de la nota</h3></td>
@@ -210,6 +233,30 @@
             </table>
             <button id="descargar-pdf-competencias" class="hidden">Descargar Informe en PDF</button>
         </div>
+
+        <!-- Sección para generar el reporte del Acumulado Final -->
+        <h3>Generar Reporte de Acumulado Final</h3>
+        <button id="generar-reporte-acumulado-final">Generar Reporte por Acumulado Final</button>
+
+        <!-- Vista previa del informe del Acumulado Final -->
+        <div id="vista-previa-acumulado-final-section" class="hidden">
+            <h2>Informe de Acumulado Final</h2>
+            <table id="informe-acumulado-final">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th class="col-nombres">Estudiante</th>
+                        <th>Acumulado (%)</th>
+                        <th>Observación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Datos del acumulado final -->
+                </tbody>
+            </table>
+            <button id="descargar-pdf-acumulado-final" class="hidden">Descargar Informe de Acumulado Final en PDF</button>
+        </div>
+
 
         <!-- Selección de estudiante y reporte general -->
         <h3>Seleccione un estudiante</h3>
@@ -518,6 +565,108 @@
 
                 return competenciasPorEvaluacion[evaluacion] || 'Ninguna competencia';
             }
+
+
+
+            
+
+
+
+            document.getElementById('generar-reporte-acumulado-final').addEventListener('click', generarReporteAcumuladoFinal);
+
+            function generarReporteAcumuladoFinal() {
+                const tabla = document.getElementById('informe-acumulado-final').querySelector('tbody');
+                tabla.innerHTML = ''; // Limpiar la tabla
+                let contadorEstudiantes = 0;
+
+                // Obtener el valor del acumulado mínimo ingresado por el usuario
+                const acumuladoMinimo = parseFloat(document.getElementById('valor-acumulado-minimo').value);
+                const tipoComparacion = document.getElementById('comparacion-acumulado-select').value;
+
+                if (isNaN(acumuladoMinimo)) {
+                    alert('Por favor, ingrese un valor válido para el acumulado.');
+                    return;
+                }
+
+                estudiantes.forEach(estudiante => {
+                    const nombreCompleto = estudiante['Nombres y Apellidos'] || `${estudiante['Nombres']} ${estudiante['Apellidos']}`;
+                    let acumuladoTotal = 0;
+
+                    // Calcular el acumulado total basado en todas las evaluaciones
+                    const evaluaciones = ['1P', '2P', '3P', '4P', 'Q1', 'Q2', 'Q3', 'Q4'];
+                    evaluaciones.forEach(evaluacion => {
+                        const notaEvaluacion = parseFloat(estudiante[evaluacion]);
+                        const pesoEvaluacion = pesosEvaluaciones[evaluacion];
+                        if (!isNaN(notaEvaluacion)) {
+                            acumuladoTotal += (notaEvaluacion * pesoEvaluacion) / 100;
+                        }
+                    });
+
+                    // Verificar si el acumulado total cumple con el criterio de comparación seleccionado
+                    let cumpleCriterio = false;
+                    switch (tipoComparacion) {
+                        case 'mayor':
+                            cumpleCriterio = acumuladoTotal > acumuladoMinimo;
+                            break;
+                        case 'mayor-igual':
+                            cumpleCriterio = acumuladoTotal >= acumuladoMinimo;
+                            break;
+                        case 'menor':
+                            cumpleCriterio = acumuladoTotal < acumuladoMinimo;
+                            break;
+                        case 'menor-igual':
+                            cumpleCriterio = acumuladoTotal <= acumuladoMinimo;
+                            break;
+                        case 'igual':
+                            cumpleCriterio = Math.abs(acumuladoTotal - acumuladoMinimo) < 0.01; // Considerar pequeñas diferencias decimales
+                            break;
+                    }
+
+                    if (cumpleCriterio) {
+                        const observacion = calcularObservacion(acumuladoTotal, '1P-Q1-Q2-2P-Q3-3P-Q4-4P');
+                        let claseResultado = observacion === 'Aprobado' ? 'azul' : 'rojo';  // Clase azul para aprobado, roja para no aprobado
+
+                        // Crear fila para la tabla del acumulado final
+                        const fila = document.createElement('tr');
+                        fila.innerHTML = `
+                            <td>${estudiante.ID}</td>
+                            <td class="col-nombres">${nombreCompleto}</td>
+                            <td>${acumuladoTotal.toFixed(2)}</td>
+                            <td class="${claseResultado}">${observacion}</td>
+                        `;
+                        tabla.appendChild(fila);
+                        contadorEstudiantes++;
+                    }
+                });
+
+                if (contadorEstudiantes > 0) {
+                    document.getElementById('vista-previa-acumulado-final-section').classList.remove('hidden');
+                    document.getElementById('descargar-pdf-acumulado-final').classList.remove('hidden');
+                } else {
+                    alert('No se encontraron estudiantes que cumplan con el criterio de comparación seleccionado.');
+                }
+            }
+
+            // Función para descargar el informe del acumulado final en PDF
+            document.getElementById('descargar-pdf-acumulado-final').addEventListener('click', function () {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                doc.text("Informe de Acumulado Final", 20, 20);
+
+                doc.autoTable({
+                    html: '#informe-acumulado-final',
+                    startY: 30
+                });
+
+                doc.save('reporte_acumulado_final.pdf');
+            });
+
+
+
+
+
+
 
             // Función para calcular la observación según el acumulado y las evaluaciones procesadas
             function calcularObservacion(acumulado, evaluacionesProcesadas) {
