@@ -3,724 +3,1621 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>INFORME del CURSO V10 - APP</title>
+    <title>Generador de Reportes Académicos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+        :root {
+            --color-base: #F5F7FA;
+            --color-primary: #007BFF;
+            --color-secondary: #6C757D;
+            --color-success: #28A745;
+            --color-warning: #FFC107;
+            --color-danger: #DC3545;
+            --border-radius: 1rem;
+            --box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.05);
+            --padding: 1rem;
+        }
+        
+        * {
+            box-sizing: border-box;
             margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--color-base);
+            color: #333;
+            line-height: 1.6;
             padding: 20px;
         }
+        
         .container {
-            max-width: 900px;
+            max-width: 1200px;
             margin: 0 auto;
-            background: #fff;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        h1, h2, h3 {
+        
+        h1, h2, h3, h4 {
+            margin-bottom: 1rem;
             color: #333;
         }
-        button {
-            background-color: #007bff;
+        
+        h1 {
+            font-size: 2rem;
+            color: var(--color-primary);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            color: var(--color-secondary);
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: var(--padding);
+            margin-bottom: 1.5rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        button, .btn {
+            background-color: var(--color-primary);
             color: white;
             border: none;
-            padding: 10px 20px;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
             cursor: pointer;
-            margin: 10px 0;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+            display: inline-block;
+            text-align: center;
         }
-        button:hover {
+        
+        button:hover, .btn:hover {
             background-color: #0056b3;
         }
-        input, select {
-            padding: 10px;
-            margin: 10px 0;
-            width: 100%;
+        
+        .btn-secondary {
+            background-color: var(--color-secondary);
         }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        .btn-success {
+            background-color: var(--color-success);
+        }
+        
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        
+        .btn-warning {
+            background-color: var(--color-warning);
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+        
+        .btn-danger {
+            background-color: var(--color-danger);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-bottom: 1rem;
         }
+        
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 500;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .file-input {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+        
+        .file-input input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-label {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background-color: var(--color-primary);
+            color: white;
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
+        
+        .file-name {
+            margin-left: 1rem;
+            font-size: 0.9rem;
+            color: var(--color-secondary);
+        }
+        
+        .tab-container {
+            margin-bottom: 2rem;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 1rem;
+        }
+        
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            background-color: #f8f9fa;
+            border: none;
+            border-radius: 0.5rem 0.5rem 0 0;
+            margin-right: 0.5rem;
+            cursor: pointer;
+        }
+        
+        .tab-button.active {
+            background-color: var(--color-primary);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .competence-table {
+            margin-bottom: 1.5rem;
+        }
+        
+        .competence-table th {
+            background-color: #f8f9fa;
+        }
+        
+        .checkbox-cell {
             text-align: center;
         }
+        
+        .report-preview {
+            border: 1px solid #ddd;
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+        }
+        
+        .student-info {
+            margin-bottom: 1.5rem;
+        }
+        
+        .evaluations-list {
+            margin-bottom: 1.5rem;
+        }
+        
+        .competence-status {
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .competence-approved {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: var(--color-success);
+        }
+        
+        .competence-not-approved {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: var(--color-danger);
+        }
+        
+        .recommendations {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .prediction {
+            background-color: rgba(255, 193, 7, 0.1);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            color: #856404;
+        }
+        
+        .group-report {
+            margin-bottom: 1.5rem;
+        }
+        
+        .group-title {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        
+        .group-message {
+            font-style: italic;
+            margin-bottom: 0.5rem;
+        }
+        
         .hidden {
             display: none;
         }
-        .rojo {
-            color: red;
-            font-weight: bold;
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
         }
-        .azul {
-            color: blue;
-            font-weight: bold;
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: var(--color-primary);
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
         }
-        .conteo {
-            font-weight: bold;
-            color: #007bff;
-            margin-bottom: 10px;
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        .switch {
-            position: relative;
-            display: inline-block;
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-success {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: var(--color-success);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
+        
+        .alert-danger {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: var(--color-danger);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+        }
+        
+        .alert-warning {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #856404;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+        
+        .weight-input {
             width: 60px;
-            height: 34px;
+            display: inline-block;
+            margin-left: 0.5rem;
         }
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
+        
+        .weight-label {
+            font-size: 0.9rem;
+            color: var(--color-secondary);
         }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: 0.4s;
+        
+        .export-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
         }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: 0.4s;
+        
+        .selection-section {
+            margin-bottom: 1.5rem;
         }
-        input:checked + .slider {
-            background-color: #2196F3;
+        
+        .selection-title {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
         }
-        input:checked + .slider:before {
-            transform: translateX(26px);
+        
+        .selection-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
         }
-        .hidden-column {
-            display: none;
+        
+        .selection-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .selection-checkbox {
+            width: 1rem;
+            height: 1rem;
+        }
+        
+        .selection-label {
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Generador de reportes por competencias</h1>
-
-        <!-- Interruptor para mostrar o no Nombres y Apellidos -->
-        <h3>Incluir Nombres y Apellidos en el Informe</h3>
-        <label class="switch">
-            <input type="checkbox" id="toggle-nombres" checked>
-            <span class="slider"></span>
-        </label>
-
-        <!-- Tabla de opciones -->
-        <table>
-            <tr>
-                <td><h2>Cargar Archivo de Estudiantes</h2></td>
-                <td><input type="file" id="file-input" accept=".xlsx, .xls"></td>
-            </tr>
-
-            <!-- Criterio para seleccionar evaluación -->
-            <tr>
-                <td><h3>Seleccione una evaluación o combinación de evaluaciones</h3></td>
-                <td>
-                    <select id="evaluacion-select">
-                        <option value="">Seleccione una evaluación</option>
-                        <option value="1P">1P</option>
-                        <option value="2P">2P</option>
-                        <option value="3P">3P</option>
-                        <option value="4P">4P</option>
-                        <option value="Q1">Q1</option>
-                        <option value="Q2">Q2</option>
-                        <option value="Q3">Q3</option>
-                        <option value="Q4">Q4</option>
-                        <!-- Combinaciones de evaluaciones adicionales -->
-                        <option value="1P-2P">1P y 2P</option>
-                        <option value="2P-3P">2P y 3P</option>
-                        <option value="3P-4P">3P y 4P</option>
-                        <option value="Q1-Q2">Q1 y Q2</option>
-                        <option value="Q2-Q3">Q2 y Q3</option>
-                        <option value="Q3-Q4">Q3 y Q4</option>
-                        <option value="2P-Q2">2P y Q2</option>
-                        <option value="2P-Q3">2P y Q3</option>
-                        <option value="3P-Q3">3P y Q3</option>
-                        <option value="4P-Q4">4P y Q4</option>
-                        <option value="1P-Q1">1P y Q1</option>
-                        <option value="1P-Q1-Q2">1P, Q1 y Q2</option>
-                        <option value="1P-Q1-Q2-2P">1P, Q1, Q2 y 2P</option>
-                        <option value="1P-Q1-Q2-2P-Q3">1P, Q1, Q2, 2P y Q3</option>
-                        <option value="1P-Q1-Q2-2P-Q3-3P">1P, Q1, Q2, 2P, Q3 y 3P</option>
-                        <option value="1P-Q1-Q2-2P-Q3-3P-Q4">1P, Q1, Q2, 2P, Q3, 3P y Q4</option>
-                        <option value="1P-Q1-Q2-2P-Q3-3P-Q4-4P">1P, Q1, Q2, 2P, Q3, 3P, Q4 y 4P</option>
+        <h1>Generador de Reportes Académicos</h1>
+        
+        <div class="card">
+            <h2>Carga de Archivos</h2>
+            <div class="grid">
+                <div>
+                    <h3>Archivo de Seguimiento Académico</h3>
+                    <div class="file-input">
+                        <label class="file-input-label">Seleccionar Archivo</label>
+                        <input type="file" id="academicFile" accept=".xlsx, .xls">
+                        <span class="file-name" id="academicFileName">No se ha seleccionado ningún archivo</span>
+                    </div>
+                    <select id="academicSheetSelect" disabled>
+                        <option value="">Seleccione una hoja...</option>
                     </select>
-                </td>
-            </tr>
-
-            <!-- Criterio para seleccionar tipo de comparación -->
-            <tr>
-                <td><h3>Seleccione el tipo de comparación</h3></td>
-                <td>
-                    <select id="comparacion-select">
-                        <option value="menor">Menor que</option>
-                        <option value="menor-igual">Menor o igual que</option>
-                        <option value="mayor">Mayor que</option>
-                        <option value="mayor-igual">Mayor o igual que</option>
-                        <option value="igual">Igual que</option>
+                    <button id="loadAcademicSheetBtn" class="btn-secondary" disabled>Cargar Hoja</button>
+                </div>
+                
+                <div>
+                    <h3>Archivo de Competencias</h3>
+                    <div class="file-input">
+                        <label class="file-input-label">Seleccionar Archivo</label>
+                        <input type="file" id="competenceFile" accept=".xlsx, .xls">
+                        <span class="file-name" id="competenceFileName">No se ha seleccionado ningún archivo</span>
+                    </div>
+                    <select id="competenceSheetSelect" disabled>
+                        <option value="">Seleccione una hoja...</option>
                     </select>
-                </td>
-            </tr>
-
-            <!-- Criterio para ingresar el valor de la nota -->
-
-            <!-- Criterio para ingresar el acumulado mínimo -->
-            <h3>Ingrese el valor de Acumulado Mínimo (%) para el Reporte Final</h3>
-            <input type="number" step="0.1" id="valor-acumulado-minimo" placeholder="Ingrese el valor mínimo del acumulado">
-
-
-            <!-- Criterio para seleccionar el tipo de comparación -->
-            <h3>Seleccione el tipo de comparación para el Acumulado Final</h3>
-            <select id="comparacion-acumulado-select">
-                <option value="mayor">Mayor que</option>
-                <option value="mayor-igual">Mayor o igual que</option>
-                <option value="menor">Menor que</option>
-                <option value="menor-igual">Menor o igual que</option>
-                <option value="igual">Igual que</option>
-            </select>
-
-
-
-            <!-- Sección para generar el reporte del Acumulado Final -->
-            <h3>Generar Reporte de Acumulado Final</h3>
-            <button id="generar-reporte-acumulado-final">Generar Reporte por Acumulado Final</button>
-
-
-            <!-- Criterio para ingresar el valor de la nota -->
-            <tr>
-                <td><h3>Ingrese el valor de la nota</h3></td>
-                <td><input type="number" step="0.1" id="valor-nota-input" placeholder="Ingrese el valor"></td>
-            </tr>
-
-            <!-- Botón para generar el reporte de competencias basado en criterios -->
-            <tr>
-                <td></td>
-                <td><button id="generar-reporte-evaluacion">Generar Reporte por Evaluación</button></td>
-            </tr>
-        </table>
-
-        <!-- Vista previa del informe de competencias -->
-        <div id="vista-previa-competencias-section" class="hidden">
-            <h2>Informe de Competencias</h2>
-            <p id="conteo-estudiantes" class="conteo"></p>
-            <p id="contador-aprobados" class="conteo"></p>
-            <p id="contador-no-aprobados" class="conteo"></p>
-            <table id="informe-competencias">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th class="col-nombres">Estudiante</th>
-                        <th>Evaluación</th>
-                        <th>Notas Evaluación</th>
-                        <th>Acumulado (%)</th>
-                        <th>Observación</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Datos de competencias -->
-                </tbody>
-            </table>
-            <button id="descargar-pdf-competencias" class="hidden">Descargar Informe en PDF</button>
+                    <button id="loadCompetenceSheetBtn" class="btn-secondary" disabled>Cargar Hoja</button>
+                </div>
+            </div>
         </div>
-
-        <!-- Sección para generar el reporte del Acumulado Final -->
-        <h3>Generar Reporte de Acumulado Final</h3>
-        <button id="generar-reporte-acumulado-final">Generar Reporte por Acumulado Final</button>
-
-        <!-- Vista previa del informe del Acumulado Final -->
-        <div id="vista-previa-acumulado-final-section" class="hidden">
-            <h2>Informe de Acumulado Final</h2>
-            <table id="informe-acumulado-final">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th class="col-nombres">Estudiante</th>
-                        <th>Acumulado (%)</th>
-                        <th>Observación</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Datos del acumulado final -->
-                </tbody>
-            </table>
-            <button id="descargar-pdf-acumulado-final" class="hidden">Descargar Informe de Acumulado Final en PDF</button>
+        
+        <div id="associationSection" class="card hidden">
+            <h2>Selección y Asociación</h2>
+            <div id="associationAlert" class="alert alert-warning hidden">
+                Por favor, cargue ambos archivos y seleccione las hojas correspondientes antes de continuar.
+            </div>
+            
+            <div id="evaluationSelectionSection" class="selection-section hidden">
+                <h3>Seleccione las evaluaciones a procesar</h3>
+                <div class="selection-options" id="evaluationSelectionOptions"></div>
+                <button id="confirmEvaluationsBtn" class="btn" style="margin-top: 1rem;">Confirmar Evaluaciones</button>
+            </div>
+            
+            <div id="competenceSelectionSection" class="selection-section hidden">
+                <h3>Seleccione las competencias a considerar</h3>
+                <div class="selection-options" id="competenceSelectionOptions"></div>
+                <button id="confirmCompetencesBtn" class="btn" style="margin-top: 1rem;">Confirmar Competencias</button>
+            </div>
+            
+            <div id="evaluationTableContainer" class="hidden">
+                <h3>Evaluaciones Seleccionadas</h3>
+                <table class="competence-table">
+                    <thead>
+                        <tr>
+                            <th>ID Evaluación</th>
+                            <th>Nombre Evaluación</th>
+                            <th>Peso (%)</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="evaluationTableBody"></tbody>
+                </table>
+            </div>
+            
+            <div id="competenceAssociationModal" class="modal hidden">
+                <div class="card" style="max-width: 800px; margin: 2rem auto;">
+                    <h3>Asociar Competencias a: <span id="currentEvaluationName"></span></h3>
+                    <div class="weight-label">
+                        Ponderación actual: <span id="currentWeight">0</span>%
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <h4>Criterios de Evaluación</h4>
+                        <div class="selection-options" id="criteriaSelectionOptions"></div>
+                    </div>
+                    
+                    <div class="export-buttons">
+                        <button id="saveAssociationBtn" class="btn-success">Guardar Asociaciones</button>
+                        <button id="cancelAssociationBtn" class="btn-secondary">Cancelar</button>
+                    </div>
+                </div>
+            </div>
         </div>
-
-
-        <!-- Selección de estudiante y reporte general -->
-        <h3>Seleccione un estudiante</h3>
-        <select id="estudiante-select">
-            <option value="">Seleccione un estudiante</option>
-        </select>
-        <button id="generar-reporte-estudiante">Generar Reporte de Notas por Estudiante</button>
-
-        <!-- Vista previa del informe general de notas del estudiante -->
-        <div id="vista-previa-notas-estudiante-section" class="hidden">
-            <h2>Informe de notas por Estudiante</h2>
-            <table id="informe-notas-estudiante">
-                <thead>
-                    <tr>
-                        <th>Evaluación</th>
-                        <th>Fecha de Evaluación</th>
-                        <th>Nota</th>
-                        <th>Competencias</th>
-                        <th>Acumulado (%)</th>
-                        <th>Observación</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Datos de las evaluaciones del estudiante -->
-                </tbody>
-            </table>
-            <button id="descargar-pdf-notas-estudiante" class="hidden">Descargar Informe en PDF</button>
+        
+        <div id="reportSection" class="card hidden">
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-button active" data-tab="individualReport">Reporte Individual</button>
+                    <button class="tab-button" data-tab="groupReport">Reporte Grupal</button>
+                </div>
+                
+                <div id="individualReport" class="tab-content active">
+                    <h2>Reporte Individual</h2>
+                    <select id="studentSelect">
+                        <option value="">Seleccione un estudiante...</option>
+                    </select>
+                    
+                    <div id="individualReportPreview" class="report-preview hidden">
+                        <div class="student-info">
+                            <h3 id="studentName"></h3>
+                            <p>ID: <span id="studentId"></span></p>
+                        </div>
+                        
+                        <div class="evaluations-list">
+                            <h4>Evaluaciones</h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Evaluación</th>
+                                        <th>Nota</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="evaluationsListBody"></tbody>
+                            </table>
+                        </div>
+                        
+                        <div id="competencesStatus">
+                            <h4>Estado de Competencias</h4>
+                            <div id="competencesList"></div>
+                        </div>
+                        
+                        <div id="recommendationsSection" class="recommendations hidden">
+                            <h4>Recomendaciones</h4>
+                            <ul id="recommendationsList"></ul>
+                        </div>
+                        
+                        <div id="predictionSection" class="prediction hidden">
+                            <h4>Predicción de Aprobación</h4>
+                            <p id="predictionText"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="export-buttons">
+                        <button id="generateIndividualReportBtn" class="btn" disabled>Generar Reporte</button>
+                        <button id="exportIndividualPdfBtn" class="btn-secondary" disabled>Exportar a PDF</button>
+                    </div>
+                </div>
+                
+                <div id="groupReport" class="tab-content">
+                    <h2>Reporte Grupal</h2>
+                    <button id="generateGroupReportBtn" class="btn">Generar Reporte Grupal</button>
+                    
+                    <div id="groupReportPreview" class="report-preview hidden">
+                        <div id="groupReportContent"></div>
+                    </div>
+                    
+                    <div class="export-buttons">
+                        <button id="exportGroupPdfBtn" class="btn-secondary" disabled>Exportar a PDF</button>
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <!-- Bibliotecas necesarias -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
-
-        <script>
-            document.getElementById('file-input').addEventListener('change', handleFileUpload);
-            document.getElementById('generar-reporte-evaluacion').addEventListener('click', generarReporteEvaluacion);
-            document.getElementById('generar-reporte-estudiante').addEventListener('click', generarReporteEstudiante);
-            document.getElementById('toggle-nombres').addEventListener('change', toggleNombresColumn);
-
-            let estudiantes = [];
-
-            function toggleNombresColumn() {
-                const incluirNombres = document.getElementById('toggle-nombres').checked;
-                const colNombres = document.querySelectorAll('.col-nombres');
-                colNombres.forEach(col => {
-                    if (incluirNombres) {
-                        col.classList.remove('hidden-column');
-                    } else {
-                        col.classList.add('hidden-column');
-                    }
-                });
+    <script>
+        // Variables globales
+        let academicData = null;
+        let competenceData = null;
+        let students = [];
+        let allEvaluations = [];
+        let selectedEvaluations = [];
+        let allCompetences = [];
+        let selectedCompetences = [];
+        let associations = {};
+        let currentEvaluationId = null;
+        
+        // Elementos del DOM
+        const academicFileInput = document.getElementById('academicFile');
+        const academicFileName = document.getElementById('academicFileName');
+        const academicSheetSelect = document.getElementById('academicSheetSelect');
+        const loadAcademicSheetBtn = document.getElementById('loadAcademicSheetBtn');
+        
+        const competenceFileInput = document.getElementById('competenceFile');
+        const competenceFileName = document.getElementById('competenceFileName');
+        const competenceSheetSelect = document.getElementById('competenceSheetSelect');
+        const loadCompetenceSheetBtn = document.getElementById('loadCompetenceSheetBtn');
+        
+        const associationSection = document.getElementById('associationSection');
+        const associationAlert = document.getElementById('associationAlert');
+        const evaluationSelectionSection = document.getElementById('evaluationSelectionSection');
+        const evaluationSelectionOptions = document.getElementById('evaluationSelectionOptions');
+        const confirmEvaluationsBtn = document.getElementById('confirmEvaluationsBtn');
+        const competenceSelectionSection = document.getElementById('competenceSelectionSection');
+        const competenceSelectionOptions = document.getElementById('competenceSelectionOptions');
+        const confirmCompetencesBtn = document.getElementById('confirmCompetencesBtn');
+        const evaluationTableContainer = document.getElementById('evaluationTableContainer');
+        const evaluationTableBody = document.getElementById('evaluationTableBody');
+        
+        const competenceAssociationModal = document.getElementById('competenceAssociationModal');
+        const currentEvaluationName = document.getElementById('currentEvaluationName');
+        const currentWeight = document.getElementById('currentWeight');
+        const criteriaSelectionOptions = document.getElementById('criteriaSelectionOptions');
+        const saveAssociationBtn = document.getElementById('saveAssociationBtn');
+        const cancelAssociationBtn = document.getElementById('cancelAssociationBtn');
+        
+        const reportSection = document.getElementById('reportSection');
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        const studentSelect = document.getElementById('studentSelect');
+        const individualReportPreview = document.getElementById('individualReportPreview');
+        const studentName = document.getElementById('studentName');
+        const studentId = document.getElementById('studentId');
+        const evaluationsListBody = document.getElementById('evaluationsListBody');
+        const competencesList = document.getElementById('competencesList');
+        const recommendationsSection = document.getElementById('recommendationsSection');
+        const recommendationsList = document.getElementById('recommendationsList');
+        const predictionSection = document.getElementById('predictionSection');
+        const predictionText = document.getElementById('predictionText');
+        const generateIndividualReportBtn = document.getElementById('generateIndividualReportBtn');
+        const exportIndividualPdfBtn = document.getElementById('exportIndividualPdfBtn');
+        
+        const generateGroupReportBtn = document.getElementById('generateGroupReportBtn');
+        const groupReportPreview = document.getElementById('groupReportPreview');
+        const groupReportContent = document.getElementById('groupReportContent');
+        const exportGroupPdfBtn = document.getElementById('exportGroupPdfBtn');
+        
+        // Event Listeners
+        academicFileInput.addEventListener('change', handleAcademicFileSelect);
+        loadAcademicSheetBtn.addEventListener('click', loadAcademicSheet);
+        
+        competenceFileInput.addEventListener('change', handleCompetenceFileSelect);
+        loadCompetenceSheetBtn.addEventListener('click', loadCompetenceSheet);
+        
+        confirmEvaluationsBtn.addEventListener('click', confirmEvaluationsSelection);
+        confirmCompetencesBtn.addEventListener('click', confirmCompetencesSelection);
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', switchTab);
+        });
+        
+        studentSelect.addEventListener('change', generateIndividualReport);
+        generateIndividualReportBtn.addEventListener('click', generateIndividualReport);
+        exportIndividualPdfBtn.addEventListener('click', exportIndividualToPdf);
+        
+        generateGroupReportBtn.addEventListener('click', generateGroupReport);
+        exportGroupPdfBtn.addEventListener('click', exportGroupToPdf);
+        
+        saveAssociationBtn.addEventListener('click', saveAssociations);
+        cancelAssociationBtn.addEventListener('click', cancelAssociation);
+        
+        // Funciones para manejar archivos
+        function handleAcademicFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                academicFileName.textContent = file.name;
+                parseExcelFile(file, academicSheetSelect, true);
+                loadAcademicSheetBtn.disabled = false;
             }
-
-            function handleFileUpload(event) {
-                const file = event.target.files[0];
-                const reader = new FileReader();
-
-                reader.onload = function(e) {
+        }
+        
+        function handleCompetenceFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                competenceFileName.textContent = file.name;
+                parseExcelFile(file, competenceSheetSelect, false);
+                loadCompetenceSheetBtn.disabled = false;
+            }
+        }
+        
+        function parseExcelFile(file, sheetSelect, isAcademic) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    const sheetName = workbook.SheetNames[0];
+                    
+                    // Limpiar select
+                    sheetSelect.innerHTML = '<option value="">Seleccione una hoja...</option>';
+                    
+                    // Agregar opciones para cada hoja
+                    workbook.SheetNames.forEach(sheetName => {
+                        const option = document.createElement('option');
+                        option.value = sheetName;
+                        option.textContent = sheetName;
+                        sheetSelect.appendChild(option);
+                    });
+                    
+                    sheetSelect.disabled = false;
+                } catch (error) {
+                    console.error('Error al procesar el archivo:', error);
+                    alert('Error al procesar el archivo. Asegúrese de que es un archivo Excel válido.');
+                }
+            };
+            
+            reader.onerror = function() {
+                console.error('Error al leer el archivo');
+                alert('Error al leer el archivo. Intente nuevamente.');
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function loadAcademicSheet() {
+            const sheetName = academicSheetSelect.value;
+            if (!sheetName) return;
+            
+            const file = academicFileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
                     const worksheet = workbook.Sheets[sheetName];
-                    estudiantes = XLSX.utils.sheet_to_json(worksheet);
-
-                    cargarEstudiantes(estudiantes);
-                };
-
-                reader.readAsArrayBuffer(file);
-            }
-
-            function cargarEstudiantes(estudiantes) {
-                const selectEstudiante = document.getElementById('estudiante-select');
-                selectEstudiante.innerHTML = '<option value="">Seleccione un estudiante</option>';
-                estudiantes.forEach(estudiante => {
-                    const nombreCompleto = estudiante['Nombres y Apellidos'] || `${estudiante['Nombres']} ${estudiante['Apellidos']}`;
-                    const option = document.createElement('option');
-                    option.value = estudiante.ID;
-                    option.textContent = nombreCompleto;
-                    selectEstudiante.appendChild(option);
-                });
-
-                document.getElementById('generar-reporte-evaluacion').classList.remove('hidden');
-                document.getElementById('generar-reporte-estudiante').classList.remove('hidden');
-            }
-
-            function generarReporteEvaluacion() {
-                const tabla = document.getElementById('informe-competencias').querySelector('tbody');
-                const conteoEstudiantes = document.getElementById('conteo-estudiantes');
-                const evaluacionSeleccionada = document.getElementById('evaluacion-select').value;
-                const comparacionSeleccionada = document.getElementById('comparacion-select').value;
-                const valorNota = parseFloat(document.getElementById('valor-nota-input').value);
-
-                if (!evaluacionSeleccionada || isNaN(valorNota)) {
-                    alert('Seleccione una evaluación y un valor válido');
-                    return;
+                    
+                    // Convertir a JSON usando header: 1 para obtener arrays
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    academicData = jsonData;
+                    
+                    // Procesar datos académicos
+                    processAcademicData();
+                    checkDataLoaded();
+                } catch (error) {
+                    console.error('Error al cargar la hoja académica:', error);
+                    alert('Error al procesar la hoja académica. Verifique el formato.');
                 }
-
-                let contadorAprobados = 0;
-                let contadorNoAprobados = 0;
-                let contadorEstudiantes = 0;
-                tabla.innerHTML = ''; // Limpiar tabla
-
-                estudiantes.forEach(estudiante => {
-                    const nombreCompleto = estudiante['Nombres y Apellidos'] || `${estudiante['Nombres']} ${estudiante['Apellidos']}`;
-                    let notasCumplenCriterio = true;
-                    let acumuladoTotal = 0;
-                    let notasEvaluaciones = [];
-
-                    const evaluaciones = evaluacionSeleccionada.split('-');
-                    evaluaciones.forEach(evaluacion => {
-                        const notaEvaluacion = parseFloat(estudiante[evaluacion]);
-                        if (!isNaN(notaEvaluacion)) {
-                            let cumpleCriterio = false;
-                            switch (comparacionSeleccionada) {
-                                case 'menor':
-                                    cumpleCriterio = notaEvaluacion < valorNota;
-                                    break;
-                                case 'menor-igual':
-                                    cumpleCriterio = notaEvaluacion <= valorNota;
-                                    break;
-                                case 'mayor':
-                                    cumpleCriterio = notaEvaluacion > valorNota;
-                                    break;
-                                case 'mayor-igual':
-                                    cumpleCriterio = notaEvaluacion >= valorNota;
-                                    break;
-                                case 'igual':
-                                    cumpleCriterio = Math.abs(notaEvaluacion - valorNota) < 0.01;
-                                    break;
-                            }
-
-                            if (!cumpleCriterio) {
-                                notasCumplenCriterio = false;
-                            }
-
-                            const pesoEvaluacion = pesosEvaluaciones[evaluacion];
-                            acumuladoTotal += (notaEvaluacion * pesoEvaluacion) / 100;
-                            notasEvaluaciones.push(`Nota: ${notaEvaluacion} (${evaluacion})`);
-                        } else {
-                            notasCumplenCriterio = false;
-                        }
-                    });
-
-                    if (!notasCumplenCriterio) {
-                        return;
-                    }
-
-                    contadorEstudiantes++;
-                    const observacion = calcularObservacion(acumuladoTotal, evaluacionSeleccionada);
-                    let claseResultado = 'rojo';  // Clase roja por defecto para no aprobados
-
-                    if (observacion === 'Aprobado') {
-                        claseResultado = 'azul'; // Si es aprobado, usar clase azul
-                        contadorAprobados++;
-                    } else {
-                        contadorNoAprobados++;
-                    }
-
-                    const fila = document.createElement('tr');
-                    fila.innerHTML = `
-                        <td>${estudiante.ID}</td>
-                        <td class="col-nombres">${nombreCompleto}</td>
-                        <td>${evaluacionSeleccionada}</td>
-                        <td>${notasEvaluaciones.join(', ')}</td>
-                        <td>${acumuladoTotal.toFixed(2)}</td>
-                        <td class="${claseResultado}">${observacion}</td>
-                    `;
-                    tabla.appendChild(fila);
-                });
-
-                conteoEstudiantes.textContent = `Estudiantes que cumplen el criterio: ${contadorEstudiantes}`;
-                document.getElementById('contador-aprobados').textContent = `Aprobados: ${contadorAprobados}`;
-                document.getElementById('contador-no-aprobados').textContent = `No Aprobados: ${contadorNoAprobados}`;
+            };
+            
+            reader.onerror = function() {
+                console.error('Error al leer el archivo académico');
+                alert('Error al leer el archivo académico. Intente nuevamente.');
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function loadCompetenceSheet() {
+            const sheetName = competenceSheetSelect.value;
+            if (!sheetName) return;
+            
+            const file = competenceFileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[sheetName];
+                    
+                    // Convertir a JSON usando header: 1 para obtener arrays
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    competenceData = jsonData;
+                    
+                    // Procesar datos de competencias
+                    processCompetenceData();
+                    checkDataLoaded();
+                } catch (error) {
+                    console.error('Error al cargar la hoja de competencias:', error);
+                    alert('Error al procesar la hoja de competencias. Verifique el formato.');
+                }
+            };
+            
+            reader.onerror = function() {
+                console.error('Error al leer el archivo de competencias');
+                alert('Error al leer el archivo de competencias. Intente nuevamente.');
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function processAcademicData() {
+            if (!academicData || academicData.length < 2) {
+                console.error('Datos académicos vacíos o insuficientes');
+                return;
+            }
+            
+            // Obtener encabezados (primera fila)
+            const headers = academicData[0];
+            
+            // Buscar columnas importantes (case insensitive)
+            const idIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('id'));
+            const nameIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('nombre'));
+            
+            if (idIndex === -1 || nameIndex === -1) {
+                console.error('No se encontraron columnas de ID o Nombre');
+                alert('El archivo debe contener columnas de ID y Nombre del estudiante');
+                return;
+            }
+            
+            // Identificar columnas de evaluaciones (asumimos que son las que no son ID ni Nombre)
+            const evaluationColumns = headers.filter((h, i) => 
+                i !== idIndex && i !== nameIndex && h && h.toString().trim() !== ''
+            );
+            
+            if (evaluationColumns.length === 0) {
+                console.error('No se encontraron columnas de evaluaciones');
+                alert('El archivo debe contener al menos una columna de evaluación');
+                return;
+            }
+            
+            // Procesar estudiantes
+            students = [];
+            for (let i = 1; i < academicData.length; i++) {
+                const row = academicData[i];
+                if (!row || row.length === 0) continue;
                 
-                document.getElementById('vista-previa-competencias-section').classList.remove('hidden');
-                document.getElementById('descargar-pdf-competencias').classList.remove('hidden');
-            }
-
-            
-
-            function calcularObservacion(acumulado, evaluacionesProcesadas) {
-                let observacion = "No Aprobado";
-
-                switch (evaluacionesProcesadas) {
-                    case '1P':
-                        if (acumulado >= 0.60) observacion = "Aprobado";
-                        break;
-                    case 'Q1':
-                        if (acumulado >= 0.15) observacion = "Aprobado";
-                        break;
-                    case '1P-Q1':
-                        if (acumulado >= 0.75) observacion = "Aprobado";
-                        break;
-                    case '1P-Q1-Q2':
-                        if (acumulado >= 0.90) observacion = "Aprobado";
-                        break;
-                    case '1P-Q1-Q2-2P':
-                        if (acumulado >= 1.50) observacion = "Aprobado";
-                        break;
-                    case '1P-Q1-Q2-2P-Q3':
-                        if (acumulado >= 1.65) observacion = "Aprobado";
-                        break;
-                    case '1P-Q1-Q2-2P-Q3-3P':
-                        if (acumulado >= 2.25) observacion = "Aprobado";
-                        break;
-                    case '1P-Q1-Q2-2P-Q3-3P-Q4':
-                        if (acumulado >= 2.40) observacion = "Aprobado";
-                        break;
-                    case '1P-Q1-Q2-2P-Q3-3P-Q4-4P':
-                        if (acumulado >= 3.00) observacion = "Aprobado";
-                        break;
-                }
-
-                return observacion;
-            }
-
-            function generarReporteEstudiante() {
-                const tabla = document.getElementById('informe-notas-estudiante').querySelector('tbody');
-                const estudianteSeleccionado = document.getElementById('estudiante-select').value;
-
-                if (!estudianteSeleccionado) {
-                    alert('Seleccione un estudiante');
-                    return;
-                }
-
-                const estudiante = estudiantes.find(e => e.ID.toString() === estudianteSeleccionado);
-                const nombreCompleto = estudiante['Nombres y Apellidos'] || `${estudiante['Nombres']} ${estudiante['Apellidos']}`;
-
-                tabla.innerHTML = ''; // Limpiar tabla anterior
-
-                const evaluaciones = ['1P', '2P', '3P', '4P', 'Q1', 'Q2', 'Q3', 'Q4'];
-                let totalAcumulado = 0;
-
-                evaluaciones.forEach(evaluacion => {
-                    const notaEvaluacion = parseFloat(estudiante[evaluacion]);
-                    const fechaEvaluacion = fechasEvaluaciones[evaluacion];
-                    const pesoEvaluacion = pesosEvaluaciones[evaluacion];
-                    let resultado, claseResultado, acumulado;
-
-                    if (isNaN(notaEvaluacion)) {
-                        resultado = "Aún no ha presentado la evaluación";
-                        claseResultado = 'rojo';  // Clase roja para no presentado
-                        acumulado = 0;
-                    } else {
-                        acumulado = (notaEvaluacion * pesoEvaluacion) / 100;
-                        totalAcumulado += acumulado;
-
-                        if (notaEvaluacion < 3.0) {
-                            const competencias = obtenerCompetenciasPorEvaluacion(evaluacion);
-                            resultado = `Nota: ${notaEvaluacion} - Competencias no alcanzadas: ${competencias}`;
-                            claseResultado = 'rojo';  // Clase roja para no alcanzadas
-                        } else {
-                            resultado = `Nota: ${notaEvaluacion} - Cumple las competencias exigidas`;
-                            claseResultado = 'azul';  // Clase azul para cumplido
-                        }
-                    }
-
-                    const observacion = calcularObservacion(totalAcumulado, evaluaciones.slice(0, evaluaciones.indexOf(evaluacion) + 1).join('-'));
-
-                    const fila = document.createElement('tr');
-                    fila.innerHTML = `
-                        <td>${evaluacion}</td>
-                        <td>${fechaEvaluacion}</td>
-                        <td class="${claseResultado}">${notaEvaluacion || 'Aún no ha presentado'}</td>
-                        <td>${resultado}</td>
-                        <td>${acumulado.toFixed(2)}</td>
-                        <td>${observacion}</td>
-                    `;
-                    tabla.appendChild(fila);
-                });
-
-                const filaTotal = document.createElement('tr');
-                filaTotal.innerHTML = `
-                    <td colspan="4"><strong>Total Acumulado</strong></td>
-                    <td><strong>${totalAcumulado.toFixed(2)}</strong></td>
-                    <td><strong>${calcularObservacion(totalAcumulado, '1P-Q1-Q2-2P-Q3-3P-Q4-4P')}</strong></td>
-                `;
-                tabla.appendChild(filaTotal);
-
-                document.getElementById('vista-previa-notas-estudiante-section').classList.remove('hidden');
-                document.getElementById('descargar-pdf-notas-estudiante').classList.remove('hidden');
-            }
-
-            const fechasEvaluaciones = {
-                '1P': 'Agosto 14', '2P': 'Septiembre 6', '3P': 'Octubre 2', '4P': 'Noviembre 6',
-                'Q1': 'Agosto 7', 'Q2': 'Septiembre 4', 'Q3': 'Septiembre 27', 'Q4': 'Octubre 25'
-            };
-
-            const pesosEvaluaciones = {
-                '1P': 20, '2P': 20, '3P': 20, '4P': 20,
-                'Q1': 5, 'Q2': 5, 'Q3': 5, 'Q4': 5
-            };
-
-            function obtenerCompetenciasPorEvaluacion(evaluacion) {
-                const competenciasPorEvaluacion = {
-                    '1P': 'Competencia 1, Competencia 2',
-                    '2P': 'Competencia 3, Competencia 4',
-                    '3P': 'Competencia 5, Competencia 6',
-                    '4P': 'Competencia 7, Competencia 8',
-                    'Q1': 'Competencia 9',
-                    'Q2': 'Competencia 10',
-                    'Q3': 'Competencia 11',
-                    'Q4': 'Competencia 12',
+                const student = {
+                    id: row[idIndex]?.toString() || '',
+                    name: row[nameIndex]?.toString() || '',
+                    evaluations: {}
                 };
-
-                return competenciasPorEvaluacion[evaluacion] || 'Ninguna competencia';
+                
+                evaluationColumns.forEach(evalName => {
+                    const headerIndex = headers.indexOf(evalName);
+                    if (headerIndex !== -1 && row[headerIndex] !== undefined) {
+                        // Convertir a número, si no es válido, usar 0
+                        const score = parseFloat(row[headerIndex]);
+                        student.evaluations[evalName] = isNaN(score) ? 0 : score;
+                    }
+                });
+                
+                if (student.id && student.name) {
+                    students.push(student);
+                }
             }
-
-
-
             
-
-
-
-            document.getElementById('generar-reporte-acumulado-final').addEventListener('click', generarReporteAcumuladoFinal);
-
-            function generarReporteAcumuladoFinal() {
-                const tabla = document.getElementById('informe-acumulado-final').querySelector('tbody');
-                tabla.innerHTML = ''; // Limpiar la tabla
-                let contadorEstudiantes = 0;
-
-                // Obtener el valor del acumulado mínimo ingresado por el usuario
-                const acumuladoMinimo = parseFloat(document.getElementById('valor-acumulado-minimo').value);
-                const tipoComparacion = document.getElementById('comparacion-acumulado-select').value;
-
-                if (isNaN(acumuladoMinimo)) {
-                    alert('Por favor, ingrese un valor válido para el acumulado.');
-                    return;
+            if (students.length === 0) {
+                console.error('No se encontraron estudiantes válidos');
+                alert('No se encontraron estudiantes válidos en el archivo');
+                return;
+            }
+            
+            // Procesar todas las evaluaciones disponibles
+            allEvaluations = evaluationColumns.map(evalName => {
+                return {
+                    id: evalName,
+                    name: evalName,
+                    weight: 0, // Se calculará más adelante
+                    competences: [], // Se llenará con las asociaciones
+                    selected: true // Por defecto todas seleccionadas
+                };
+            });
+            
+            // Mostrar opciones de selección de evaluaciones
+            showEvaluationSelectionOptions();
+        }
+        
+        function processCompetenceData() {
+            if (!competenceData || competenceData.length < 2) {
+                console.error('Datos de competencias vacíos o insuficientes');
+                return;
+            }
+            
+            // Obtener encabezados (primera fila)
+            const headers = competenceData[0];
+            
+            // Buscar columnas importantes (case insensitive)
+            const competenceIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('competencia'));
+            const criteriaIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('criterio'));
+            
+            if (competenceIndex === -1 || criteriaIndex === -1) {
+                console.error('No se encontraron columnas de Competencia o Criterio');
+                alert('El archivo de competencias debe contener columnas de Competencia y Criterio');
+                return;
+            }
+            
+            // Procesar competencias y criterios
+            allCompetences = [];
+            let currentCompetence = null;
+            
+            for (let i = 1; i < competenceData.length; i++) {
+                const row = competenceData[i];
+                if (!row || row.length === 0) continue;
+                
+                const competenceName = row[competenceIndex]?.toString().trim();
+                const criteriaName = row[criteriaIndex]?.toString().trim();
+                
+                if (competenceName && competenceName !== '') {
+                    // Nueva competencia
+                    currentCompetence = {
+                        id: competenceName,
+                        name: competenceName,
+                        criteria: [],
+                        selected: true // Por defecto todas seleccionadas
+                    };
+                    allCompetences.push(currentCompetence);
                 }
-
-                estudiantes.forEach(estudiante => {
-                    const nombreCompleto = estudiante['Nombres y Apellidos'] || `${estudiante['Nombres']} ${estudiante['Apellidos']}`;
-                    let acumuladoTotal = 0;
-
-                    // Calcular el acumulado total basado en todas las evaluaciones
-                    const evaluaciones = ['1P', '2P', '3P', '4P', 'Q1', 'Q2', 'Q3', 'Q4'];
-                    evaluaciones.forEach(evaluacion => {
-                        const notaEvaluacion = parseFloat(estudiante[evaluacion]);
-                        const pesoEvaluacion = pesosEvaluaciones[evaluacion];
-                        if (!isNaN(notaEvaluacion)) {
-                            acumuladoTotal += (notaEvaluacion * pesoEvaluacion) / 100;
-                        }
+                
+                if (currentCompetence && criteriaName && criteriaName !== '') {
+                    currentCompetence.criteria.push({
+                        id: criteriaName,
+                        name: criteriaName,
+                        selected: true // Por defecto todos seleccionados
                     });
-
-                    // Verificar si el acumulado total cumple con el criterio de comparación seleccionado
-                    let cumpleCriterio = false;
-                    switch (tipoComparacion) {
-                        case 'mayor':
-                            cumpleCriterio = acumuladoTotal > acumuladoMinimo;
-                            break;
-                        case 'mayor-igual':
-                            cumpleCriterio = acumuladoTotal >= acumuladoMinimo;
-                            break;
-                        case 'menor':
-                            cumpleCriterio = acumuladoTotal < acumuladoMinimo;
-                            break;
-                        case 'menor-igual':
-                            cumpleCriterio = acumuladoTotal <= acumuladoMinimo;
-                            break;
-                        case 'igual':
-                            cumpleCriterio = Math.abs(acumuladoTotal - acumuladoMinimo) < 0.01; // Considerar pequeñas diferencias decimales
-                            break;
-                    }
-
-                    if (cumpleCriterio) {
-                        const observacion = calcularObservacion(acumuladoTotal, '1P-Q1-Q2-2P-Q3-3P-Q4-4P');
-                        let claseResultado = observacion === 'Aprobado' ? 'azul' : 'rojo';  // Clase azul para aprobado, roja para no aprobado
-
-                        // Crear fila para la tabla del acumulado final
-                        const fila = document.createElement('tr');
-                        fila.innerHTML = `
-                            <td>${estudiante.ID}</td>
-                            <td class="col-nombres">${nombreCompleto}</td>
-                            <td>${acumuladoTotal.toFixed(2)}</td>
-                            <td class="${claseResultado}">${observacion}</td>
-                        `;
-                        tabla.appendChild(fila);
-                        contadorEstudiantes++;
+                }
+            }
+            
+            if (allCompetences.length === 0) {
+                console.error('No se encontraron competencias válidas');
+                alert('No se encontraron competencias válidas en el archivo');
+                return;
+            }
+            
+            // Mostrar opciones de selección de competencias
+            showCompetenceSelectionOptions();
+        }
+        
+        function showEvaluationSelectionOptions() {
+            evaluationSelectionOptions.innerHTML = '';
+            
+            allEvaluations.forEach(evaluation => {
+                const item = document.createElement('div');
+                item.className = 'selection-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'selection-checkbox';
+                checkbox.checked = evaluation.selected;
+                checkbox.id = `eval-${evaluation.id}`;
+                checkbox.addEventListener('change', (e) => {
+                    evaluation.selected = e.target.checked;
+                });
+                
+                const label = document.createElement('label');
+                label.className = 'selection-label';
+                label.htmlFor = `eval-${evaluation.id}`;
+                label.textContent = evaluation.name;
+                
+                item.appendChild(checkbox);
+                item.appendChild(label);
+                evaluationSelectionOptions.appendChild(item);
+            });
+            
+            evaluationSelectionSection.classList.remove('hidden');
+        }
+        
+        function showCompetenceSelectionOptions() {
+            competenceSelectionOptions.innerHTML = '';
+            
+            allCompetences.forEach(competence => {
+                const item = document.createElement('div');
+                item.className = 'selection-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'selection-checkbox';
+                checkbox.checked = competence.selected;
+                checkbox.id = `comp-${competence.id}`;
+                checkbox.addEventListener('change', (e) => {
+                    competence.selected = e.target.checked;
+                });
+                
+                const label = document.createElement('label');
+                label.className = 'selection-label';
+                label.htmlFor = `comp-${competence.id}`;
+                label.textContent = competence.name;
+                
+                item.appendChild(checkbox);
+                item.appendChild(label);
+                competenceSelectionOptions.appendChild(item);
+            });
+            
+            competenceSelectionSection.classList.remove('hidden');
+        }
+        
+        function confirmEvaluationsSelection() {
+            selectedEvaluations = allEvaluations.filter(eval => eval.selected);
+            
+            if (selectedEvaluations.length === 0) {
+                alert('Debe seleccionar al menos una evaluación');
+                return;
+            }
+            
+            // Calcular pesos iniciales (iguales para todas las evaluaciones seleccionadas)
+            const initialWeight = (100 / selectedEvaluations.length).toFixed(2);
+            selectedEvaluations.forEach(eval => {
+                eval.weight = parseFloat(initialWeight);
+            });
+            
+            evaluationSelectionSection.classList.add('hidden');
+            
+            // Si ya se seleccionaron competencias, mostrar la tabla de evaluaciones
+            if (selectedCompetences.length > 0) {
+                showEvaluationsTable();
+            }
+        }
+        
+        function confirmCompetencesSelection() {
+            selectedCompetences = allCompetences.filter(comp => comp.selected);
+            
+            if (selectedCompetences.length === 0) {
+                alert('Debe seleccionar al menos una competencia');
+                return;
+            }
+            
+            competenceSelectionSection.classList.add('hidden');
+            
+            // Si ya se seleccionaron evaluaciones, mostrar la tabla de evaluaciones
+            if (selectedEvaluations.length > 0) {
+                showEvaluationsTable();
+            }
+        }
+        
+        function checkDataLoaded() {
+            if (academicData && competenceData && students.length > 0 && allCompetences.length > 0) {
+                associationSection.classList.remove('hidden');
+                associationAlert.classList.add('hidden');
+            } else {
+                associationAlert.classList.remove('hidden');
+            }
+        }
+        
+        function showEvaluationsTable() {
+            evaluationTableContainer.classList.remove('hidden');
+            reportSection.classList.remove('hidden');
+            
+            // Mostrar tabla de evaluaciones
+            displayEvaluationsTable();
+            
+            // Llenar select de estudiantes
+            fillStudentSelect();
+        }
+        
+        function fillStudentSelect() {
+            studentSelect.innerHTML = '<option value="">Seleccione un estudiante...</option>';
+            
+            students.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.id;
+                option.textContent = `${student.name} (${student.id})`;
+                studentSelect.appendChild(option);
+            });
+            
+            generateIndividualReportBtn.disabled = students.length === 0;
+        }
+        
+        function displayEvaluationsTable() {
+            evaluationTableBody.innerHTML = '';
+            
+            selectedEvaluations.forEach(evaluation => {
+                const row = document.createElement('tr');
+                
+                // ID Evaluación
+                const idCell = document.createElement('td');
+                idCell.textContent = evaluation.id;
+                row.appendChild(idCell);
+                
+                // Nombre Evaluación
+                const nameCell = document.createElement('td');
+                nameCell.textContent = evaluation.name;
+                row.appendChild(nameCell);
+                
+                // Peso
+                const weightCell = document.createElement('td');
+                const weightInput = document.createElement('input');
+                weightInput.type = 'number';
+                weightInput.className = 'weight-input';
+                weightInput.value = evaluation.weight.toFixed(2);
+                weightInput.min = '0';
+                weightInput.max = '100';
+                weightInput.step = '0.01';
+                weightInput.addEventListener('change', (e) => {
+                    const newWeight = parseFloat(e.target.value);
+                    if (!isNaN(newWeight)) {
+                        evaluation.weight = newWeight;
                     }
                 });
-
-                if (contadorEstudiantes > 0) {
-                    document.getElementById('vista-previa-acumulado-final-section').classList.remove('hidden');
-                    document.getElementById('descargar-pdf-acumulado-final').classList.remove('hidden');
+                weightCell.appendChild(weightInput);
+                row.appendChild(weightCell);
+                
+                // Acciones
+                const actionsCell = document.createElement('td');
+                const associateBtn = document.createElement('button');
+                associateBtn.className = 'btn';
+                associateBtn.textContent = 'Asociar Competencias';
+                associateBtn.addEventListener('click', () => openAssociationModal(evaluation.id));
+                actionsCell.appendChild(associateBtn);
+                row.appendChild(actionsCell);
+                
+                evaluationTableBody.appendChild(row);
+            });
+        }
+        
+        function openAssociationModal(evaluationId) {
+            currentEvaluationId = evaluationId;
+            const evaluation = selectedEvaluations.find(e => e.id === evaluationId);
+            
+            if (!evaluation) return;
+            
+            currentEvaluationName.textContent = evaluation.name;
+            currentWeight.textContent = evaluation.weight.toFixed(2);
+            
+            // Limpiar opciones de criterios
+            criteriaSelectionOptions.innerHTML = '';
+            
+            // Llenar con criterios de las competencias seleccionadas
+            selectedCompetences.forEach(competence => {
+                // Título de la competencia
+                const competenceTitle = document.createElement('div');
+                competenceTitle.className = 'selection-title';
+                competenceTitle.textContent = competence.name;
+                criteriaSelectionOptions.appendChild(competenceTitle);
+                
+                // Criterios de la competencia
+                competence.criteria.forEach(criteria => {
+                    const item = document.createElement('div');
+                    item.className = 'selection-item';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'selection-checkbox';
+                    checkbox.checked = criteria.selected;
+                    checkbox.id = `criteria-${criteria.id}`;
+                    checkbox.addEventListener('change', (e) => {
+                        criteria.selected = e.target.checked;
+                    });
+                    
+                    const label = document.createElement('label');
+                    label.className = 'selection-label';
+                    label.htmlFor = `criteria-${criteria.id}`;
+                    label.textContent = criteria.name;
+                    
+                    item.appendChild(checkbox);
+                    item.appendChild(label);
+                    criteriaSelectionOptions.appendChild(item);
+                });
+            });
+            
+            competenceAssociationModal.classList.remove('hidden');
+        }
+        
+        function saveAssociations() {
+            const evaluation = selectedEvaluations.find(e => e.id === currentEvaluationId);
+            if (!evaluation) return;
+            
+            // Limpiar competencias existentes
+            evaluation.competences = [];
+            
+            // Obtener competencias y criterios seleccionados
+            selectedCompetences.forEach(competence => {
+                const selectedCriteria = competence.criteria.filter(c => c.selected);
+                
+                if (selectedCriteria.length > 0) {
+                    evaluation.competences.push({
+                        id: competence.id,
+                        name: competence.name,
+                        criteria: selectedCriteria.map(c => ({
+                            id: c.id,
+                            name: c.name
+                        }))
+                    });
+                }
+            });
+            
+            // Guardar asociación global
+            associations[currentEvaluationId] = evaluation.competences;
+            
+            // Cerrar modal
+            competenceAssociationModal.classList.add('hidden');
+        }
+        
+        function cancelAssociation() {
+            competenceAssociationModal.classList.add('hidden');
+        }
+        
+        function switchTab(event) {
+            const tabId = event.target.getAttribute('data-tab');
+            
+            // Actualizar botones de pestaña
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Actualizar contenido de pestaña
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+        }
+        
+        function generateIndividualReport() {
+            const studentId = studentSelect.value;
+            if (!studentId) return;
+            
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+            
+            // Mostrar información del estudiante
+            studentName.textContent = student.name;
+            studentId.textContent = student.id;
+            
+            // Mostrar evaluaciones
+            evaluationsListBody.innerHTML = '';
+            
+            let totalWeightedScore = 0;
+            let totalWeight = 0;
+            
+            selectedEvaluations.forEach(evaluation => {
+                const score = student.evaluations[evaluation.id] || 0;
+                const weightedScore = score * (evaluation.weight / 100);
+                
+                totalWeightedScore += weightedScore;
+                totalWeight += evaluation.weight;
+                
+                const row = document.createElement('tr');
+                
+                // Nombre evaluación
+                const nameCell = document.createElement('td');
+                nameCell.textContent = evaluation.name;
+                row.appendChild(nameCell);
+                
+                // Nota
+                const scoreCell = document.createElement('td');
+                scoreCell.textContent = score.toFixed(2);
+                row.appendChild(scoreCell);
+                
+                // Estado
+                const statusCell = document.createElement('td');
+                if (score >= 3.0) {
+                    statusCell.innerHTML = '<span style="color: var(--color-success)">Aprobado</span>';
                 } else {
-                    alert('No se encontraron estudiantes que cumplan con el criterio de comparación seleccionado.');
+                    statusCell.innerHTML = '<span style="color: var(--color-danger)">No aprobado</span>';
                 }
-            }
-
-            // Función para descargar el informe del acumulado final en PDF
-            document.getElementById('descargar-pdf-acumulado-final').addEventListener('click', function () {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-
-                doc.text("Informe de Acumulado Final", 20, 20);
-
-                doc.autoTable({
-                    html: '#informe-acumulado-final',
-                    startY: 30
-                });
-
-                doc.save('reporte_acumulado_final.pdf');
+                row.appendChild(statusCell);
+                
+                evaluationsListBody.appendChild(row);
             });
-
-
-
-
-
-
-
-            // Función para calcular la observación según el acumulado y las evaluaciones procesadas
-            function calcularObservacion(acumulado, evaluacionesProcesadas) {
-                let observacion = "No Aprobado";
-
-                switch (evaluacionesProcesadas) {
-                    case '1P':
-                        if (acumulado >= 0.60) observacion = "Aprobado";
-                        break;
-                    case 'Q1':
-                        if (acumulado >= 0.15) observacion = "Aprobado";
-                        break;
-                    case '1P-Q1':
-                        if (acumulado >= 0.75) observacion = "Aprobado";
-                        break;
-                    case '1P-Q1-Q2':
-                        if (acumulado >= 0.90) observacion = "Aprobado";
-                        break;
-                    case '1P-Q1-Q2-2P':
-                        if (acumulado >= 1.50) observacion = "Aprobado";
-                        break;
-                    case '1P-Q1-Q2-2P-Q3':
-                        if (acumulado >= 1.65) observacion = "Aprobado";
-                        break;
-                    case '1P-Q1-Q2-2P-Q3-3P':
-                        if (acumulado >= 2.25) observacion = "Aprobado";
-                        break;
-                    case '1P-Q1-Q2-2P-Q3-3P-Q4':
-                        if (acumulado >= 2.40) observacion = "Aprobado";
-                        break;
-                    case '1P-Q1-Q2-2P-Q3-3P-Q4-4P':
-                        if (acumulado >= 3.00) observacion = "Aprobado";
-                        break;
+            
+            // Mostrar competencias
+            competencesList.innerHTML = '';
+            
+            let hasNotApprovedCompetences = false;
+            const studentCompetences = {};
+            
+            // Calcular estado de cada competencia seleccionada
+            selectedCompetences.forEach(competence => {
+                // Verificar si esta competencia está asociada a alguna evaluación
+                const isAssociated = selectedEvaluations.some(eval => 
+                    eval.competences.some(comp => comp.id === competence.id)
+                );
+                
+                if (!isAssociated) return; // Saltar competencias no asociadas
+                
+                // Calcular promedio ponderado para esta competencia
+                let competenceScore = 0;
+                let competenceWeight = 0;
+                
+                selectedEvaluations.forEach(evaluation => {
+                    const isInEvaluation = evaluation.competences.some(comp => comp.id === competence.id);
+                    if (isInEvaluation) {
+                        const score = student.evaluations[evaluation.id] || 0;
+                        competenceScore += score * (evaluation.weight / 100);
+                        competenceWeight += evaluation.weight;
+                    }
+                });
+                
+                const finalScore = competenceWeight > 0 ? (competenceScore / (competenceWeight / 100)) : 0;
+                const isApproved = finalScore >= 3.0;
+                
+                if (!isApproved) {
+                    hasNotApprovedCompetences = true;
                 }
-
-                return observacion;
-            }
-
-            // Función para descargar el informe general del estudiante en PDF
-            document.getElementById('descargar-pdf-notas-estudiante').addEventListener('click', function () {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-
-                doc.text("Informe General de Notas por Estudiante", 20, 20);
-
-                doc.autoTable({
-                    html: '#informe-notas-estudiante',
-                    startY: 30
-                });
-
-                doc.save('reporte_general_notas_estudiante.pdf');
+                
+                studentCompetences[competence.id] = {
+                    score: finalScore,
+                    isApproved: isApproved
+                };
+                
+                // Mostrar estado de la competencia
+                const competenceDiv = document.createElement('div');
+                competenceDiv.className = isApproved ? 'competence-status competence-approved' : 'competence-status competence-not-approved';
+                
+                const competenceTitle = document.createElement('strong');
+                competenceTitle.textContent = competence.name;
+                competenceDiv.appendChild(competenceTitle);
+                
+                const competenceScoreText = document.createElement('p');
+                competenceScoreText.textContent = `Calificación: ${finalScore.toFixed(2)} - ${isApproved ? 'Aprobada' : 'No aprobada'}`;
+                competenceDiv.appendChild(competenceScoreText);
+                
+                competencesList.appendChild(competenceDiv);
             });
-
-        </script>
-    </div>
+            
+            // Mostrar recomendaciones si hay competencias no aprobadas
+            if (hasNotApprovedCompetences) {
+                recommendationsSection.classList.remove('hidden');
+                recommendationsList.innerHTML = '';
+                
+                // Generar recomendaciones
+                const recommendations = [
+                    'Asiste regularmente a clase',
+                    'Aprovecha las asesorías',
+                    'Realiza todas las actividades',
+                    'Repasa los temas con dificultad',
+                    'Participa activamente en clase'
+                ];
+                
+                recommendations.forEach(rec => {
+                    const li = document.createElement('li');
+                    li.textContent = rec;
+                    recommendationsList.appendChild(li);
+                });
+                
+                // Generar frase de estímulo
+                const encouragementPhrases = [
+                    '¡Vas por buen camino, no te detengas!',
+                    'Todos los esfuerzos tienen su recompensa, sigue adelante.',
+                    'Cada error es una oportunidad para aprender.',
+                    'La práctica hace al maestro, sigue trabajando.',
+                    'Tú puedes lograrlo, solo necesitas un poco más de esfuerzo.'
+                ];
+                
+                const randomPhrase = encouragementPhrases[Math.floor(Math.random() * encouragementPhrases.length)];
+                const encouragementP = document.createElement('p');
+                encouragementP.innerHTML = `✅ <strong>Frase de estímulo:</strong> ${randomPhrase}`;
+                recommendationsSection.insertBefore(encouragementP, recommendationsList);
+            } else {
+                recommendationsSection.classList.add('hidden');
+            }
+            
+            // Calcular predicción si el promedio es menor a 3.0
+            const finalScore = totalWeight > 0 ? (totalWeightedScore / (totalWeight / 100)) : 0;
+            
+            if (finalScore < 3.0) {
+                predictionSection.classList.remove('hidden');
+                
+                // Calcular nota mínima necesaria en la próxima evaluación para aprobar
+                // Asumimos que hay una evaluación futura con un peso promedio
+                const averageWeight = selectedEvaluations.reduce((sum, eval) => sum + eval.weight, 0) / selectedEvaluations.length;
+                const neededScore = (3.0 * 100 - finalScore * (100 - averageWeight)) / averageWeight;
+                
+                predictionText.textContent = `Nota actual: ${finalScore.toFixed(2)}. `;
+                predictionText.textContent += `Necesita al menos ${Math.max(neededScore, 3.0).toFixed(2)} en la próxima evaluación (con peso ${averageWeight.toFixed(2)}%) para aprobar el curso.`;
+            } else {
+                predictionSection.classList.add('hidden');
+            }
+            
+            // Mostrar reporte
+            individualReportPreview.classList.remove('hidden');
+            exportIndividualPdfBtn.disabled = false;
+        }
+        
+        function generateGroupReport() {
+            groupReportContent.innerHTML = '';
+            
+            // Calcular promedios y agrupar estudiantes
+            const studentGroups = {
+                low: [],    // < 3.0
+                medium: [], // 3.0 - 4.0
+                high: []     // > 4.0
+            };
+            
+            students.forEach(student => {
+                let totalWeightedScore = 0;
+                let totalWeight = 0;
+                
+                selectedEvaluations.forEach(evaluation => {
+                    const score = student.evaluations[evaluation.id] || 0;
+                    totalWeightedScore += score * (evaluation.weight / 100);
+                    totalWeight += evaluation.weight;
+                });
+                
+                const finalScore = totalWeight > 0 ? (totalWeightedScore / (totalWeight / 100)) : 0;
+                student.finalScore = finalScore;
+                
+                if (finalScore < 3.0) {
+                    studentGroups.low.push(student);
+                } else if (finalScore <= 4.0) {
+                    studentGroups.medium.push(student);
+                } else {
+                    studentGroups.high.push(student);
+                }
+            });
+            
+            // Generar reporte por grupo
+            // Grupo bajo
+            if (studentGroups.low.length > 0) {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'group-report';
+                
+                const groupTitle = document.createElement('h3');
+                groupTitle.className = 'group-title';
+                groupTitle.textContent = `Estudiantes con promedio menor a 3.0 (${studentGroups.low.length})`;
+                groupDiv.appendChild(groupTitle);
+                
+                const groupMessage = document.createElement('p');
+                groupMessage.className = 'group-message';
+                groupMessage.textContent = 'Estos estudiantes necesitan apoyo adicional para alcanzar los objetivos del curso.';
+                groupDiv.appendChild(groupMessage);
+                
+                const groupTable = document.createElement('table');
+                const headerRow = document.createElement('tr');
+                headerRow.innerHTML = '<th>Nombre</th><th>ID</th><th>Promedio</th>';
+                groupTable.appendChild(headerRow);
+                
+                studentGroups.low.forEach(student => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${student.name}</td><td>${student.id}</td><td>${student.finalScore.toFixed(2)}</td>`;
+                    groupTable.appendChild(row);
+                });
+                
+                groupDiv.appendChild(groupTable);
+                groupReportContent.appendChild(groupDiv);
+            }
+            
+            // Grupo medio
+            if (studentGroups.medium.length > 0) {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'group-report';
+                
+                const groupTitle = document.createElement('h3');
+                groupTitle.className = 'group-title';
+                groupTitle.textContent = `Estudiantes con promedio entre 3.0 y 4.0 (${studentGroups.medium.length})`;
+                groupDiv.appendChild(groupTitle);
+                
+                const groupMessage = document.createElement('p');
+                groupMessage.className = 'group-message';
+                groupMessage.textContent = 'Estos estudiantes están aprobados pero pueden mejorar con un poco más de esfuerzo.';
+                groupDiv.appendChild(groupMessage);
+                
+                const groupTable = document.createElement('table');
+                const headerRow = document.createElement('tr');
+                headerRow.innerHTML = '<th>Nombre</th><th>ID</th><th>Promedio</th>';
+                groupTable.appendChild(headerRow);
+                
+                studentGroups.medium.forEach(student => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${student.name}</td><td>${student.id}</td><td>${student.finalScore.toFixed(2)}</td>`;
+                    groupTable.appendChild(row);
+                });
+                
+                groupDiv.appendChild(groupTable);
+                groupReportContent.appendChild(groupDiv);
+            }
+            
+            // Grupo alto
+            if (studentGroups.high.length > 0) {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'group-report';
+                
+                const groupTitle = document.createElement('h3');
+                groupTitle.className = 'group-title';
+                groupTitle.textContent = `Estudiantes con promedio mayor a 4.0 (${studentGroups.high.length})`;
+                groupDiv.appendChild(groupTitle);
+                
+                const groupMessage = document.createElement('p');
+                groupMessage.className = 'group-message';
+                groupMessage.textContent = '¡Excelente trabajo! Estos estudiantes están destacando en el curso.';
+                groupDiv.appendChild(groupMessage);
+                
+                const groupTable = document.createElement('table');
+                const headerRow = document.createElement('tr');
+                headerRow.innerHTML = '<th>Nombre</th><th>ID</th><th>Promedio</th>';
+                groupTable.appendChild(headerRow);
+                
+                studentGroups.high.forEach(student => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${student.name}</td><td>${student.id}</td><td>${student.finalScore.toFixed(2)}</td>`;
+                    groupTable.appendChild(row);
+                });
+                
+                groupDiv.appendChild(groupTable);
+                groupReportContent.appendChild(groupDiv);
+            }
+            
+            // Mostrar reporte
+            groupReportPreview.classList.remove('hidden');
+            exportGroupPdfBtn.disabled = false;
+        }
+        
+        function exportIndividualToPdf() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Título
+            doc.setFontSize(18);
+            doc.setTextColor(0, 123, 255);
+            doc.text('Reporte Académico Individual', 105, 20, { align: 'center' });
+            
+            // Información del estudiante
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Estudiante: ${studentName.textContent}`, 20, 40);
+            doc.text(`ID: ${studentId.textContent}`, 20, 50);
+            
+            // Evaluaciones
+            doc.setFontSize(14);
+            doc.text('Evaluaciones:', 20, 70);
+            
+            let y = 80;
+            doc.setFontSize(10);
+            doc.text('Evaluación', 20, y);
+            doc.text('Nota', 100, y);
+            doc.text('Estado', 150, y);
+            y += 10;
+            
+            const rows = evaluationsListBody.querySelectorAll('tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                doc.text(cells[0].textContent, 20, y);
+                doc.text(cells[1].textContent, 100, y);
+                
+                if (cells[2].textContent.includes('Aprobado')) {
+                    doc.setTextColor(40, 167, 69);
+                } else {
+                    doc.setTextColor(220, 53, 69);
+                }
+                
+                doc.text(cells[2].textContent, 150, y);
+                doc.setTextColor(0, 0, 0);
+                y += 10;
+            });
+            
+            // Competencias
+            y += 10;
+            doc.setFontSize(14);
+            doc.text('Estado de Competencias:', 20, y);
+            y += 10;
+            
+            const competenceDivs = competencesList.querySelectorAll('.competence-status');
+            competenceDivs.forEach(div => {
+                const title = div.querySelector('strong').textContent;
+                const text = div.querySelector('p').textContent;
+                
+                if (div.classList.contains('competence-approved')) {
+                    doc.setTextColor(40, 167, 69);
+                } else {
+                    doc.setTextColor(220, 53, 69);
+                }
+                
+                doc.setFontSize(12);
+                doc.text(title, 20, y);
+                doc.setFontSize(10);
+                doc.text(text, 30, y + 7);
+                y += 15;
+            });
+            
+            doc.setTextColor(0, 0, 0);
+            
+            // Recomendaciones
+            if (!recommendationsSection.classList.contains('hidden')) {
+                y += 10;
+                doc.setFontSize(14);
+                doc.text('Recomendaciones:', 20, y);
+                y += 10;
+                
+                const lis = recommendationsList.querySelectorAll('li');
+                lis.forEach(li => {
+                    doc.setFontSize(10);
+                    doc.text(`• ${li.textContent}`, 20, y);
+                    y += 7;
+                });
+            }
+            
+            // Predicción
+            if (!predictionSection.classList.contains('hidden')) {
+                y += 10;
+                doc.setFontSize(14);
+                doc.text('Predicción de Aprobación:', 20, y);
+                y += 10;
+                
+                doc.setFontSize(10);
+                doc.text(predictionText.textContent, 20, y, { maxWidth: 170 });
+            }
+            
+            // Guardar PDF
+            doc.save(`Reporte_${studentName.textContent.replace(/ /g, '_')}.pdf`);
+        }
+        
+        function exportGroupToPdf() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Título
+            doc.setFontSize(18);
+            doc.setTextColor(0, 123, 255);
+            doc.text('Reporte Académico Grupal', 105, 20, { align: 'center' });
+            
+            let y = 40;
+            
+            // Grupos
+            const groupDivs = groupReportContent.querySelectorAll('.group-report');
+            groupDivs.forEach((groupDiv, index) => {
+                if (index > 0 && y > 250) {
+                    doc.addPage();
+                    y = 20;
+                }
+                
+                const title = groupDiv.querySelector('.group-title').textContent;
+                const message = groupDiv.querySelector('.group-message').textContent;
+                const table = groupDiv.querySelector('table');
+                const rows = table.querySelectorAll('tr');
+                
+                // Grupo título
+                doc.setFontSize(14);
+                doc.setTextColor(0, 0, 0);
+                doc.text(title, 20, y);
+                y += 10;
+                
+                // Mensaje
+                doc.setFontSize(10);
+                doc.text(message, 20, y);
+                y += 10;
+                
+                // Tabla
+                doc.setFontSize(10);
+                
+                // Encabezados
+                const headers = rows[0].querySelectorAll('th');
+                doc.text(headers[0].textContent, 20, y);
+                doc.text(headers[1].textContent, 80, y);
+                doc.text(headers[2].textContent, 140, y);
+                y += 10;
+                
+                // Filas
+                for (let i = 1; i < rows.length; i++) {
+                    if (y > 270) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    
+                    const cells = rows[i].querySelectorAll('td');
+                    doc.text(cells[0].textContent, 20, y);
+                    doc.text(cells[1].textContent, 80, y);
+                    doc.text(cells[2].textContent, 140, y);
+                    y += 10;
+                }
+                
+                y += 15;
+            });
+            
+            // Guardar PDF
+            doc.save('Reporte_Grupal.pdf');
+        }
+    </script>
 </body>
 </html>
