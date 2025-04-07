@@ -384,6 +384,47 @@
         .selection-label {
             font-size: 0.9rem;
         }
+        
+        .filter-section {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .filter-input {
+            width: 80px;
+        }
+        
+        .pdf-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .pdf-option {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .pdf-option label {
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -531,6 +572,61 @@
                 
                 <div id="groupReport" class="tab-content">
                     <h2>Reporte Grupal</h2>
+                    
+                    <div class="filter-section">
+                        <h3>Filtros de Notas</h3>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <input type="radio" id="filterAll" name="filterType" value="all" checked>
+                                <label for="filterAll">Todos los estudiantes</label>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <input type="radio" id="filterRange" name="filterType" value="range">
+                                <label for="filterRange">Nota entre</label>
+                                <input type="number" id="filterMin" class="filter-input" min="0" max="5" step="0.1" disabled>
+                                <label>y</label>
+                                <input type="number" id="filterMax" class="filter-input" min="0" max="5" step="0.1" disabled>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <input type="radio" id="filterGreater" name="filterType" value="greater">
+                                <label for="filterGreater">Nota mayor o igual a</label>
+                                <input type="number" id="filterGreaterValue" class="filter-input" min="0" max="5" step="0.1" disabled>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <input type="radio" id="filterLess" name="filterType" value="less">
+                                <label for="filterLess">Nota menor o igual a</label>
+                                <input type="number" id="filterLessValue" class="filter-input" min="0" max="5" step="0.1" disabled>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pdf-options">
+                        <div class="pdf-option">
+                            <label for="pageSize">Tamaño de página:</label>
+                            <select id="pageSize">
+                                <option value="letter">Carta (21.6 x 27.9 cm)</option>
+                                <option value="legal">Oficio (21.6 x 35.6 cm)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="pdf-option">
+                            <label for="pageOrientation">Orientación:</label>
+                            <select id="pageOrientation">
+                                <option value="portrait">Vertical</option>
+                                <option value="landscape">Horizontal</option>
+                            </select>
+                        </div>
+                    </div>
+                    
                     <button id="generateGroupReportBtn" class="btn">Generar Reporte Grupal</button>
                     
                     <div id="groupReportPreview" class="report-preview hidden">
@@ -603,6 +699,16 @@
         const generateIndividualReportBtn = document.getElementById('generateIndividualReportBtn');
         const exportIndividualPdfBtn = document.getElementById('exportIndividualPdfBtn');
         
+        const filterAll = document.getElementById('filterAll');
+        const filterRange = document.getElementById('filterRange');
+        const filterMin = document.getElementById('filterMin');
+        const filterMax = document.getElementById('filterMax');
+        const filterGreater = document.getElementById('filterGreater');
+        const filterGreaterValue = document.getElementById('filterGreaterValue');
+        const filterLess = document.getElementById('filterLess');
+        const filterLessValue = document.getElementById('filterLessValue');
+        const pageSize = document.getElementById('pageSize');
+        const pageOrientation = document.getElementById('pageOrientation');
         const generateGroupReportBtn = document.getElementById('generateGroupReportBtn');
         const groupReportPreview = document.getElementById('groupReportPreview');
         const groupReportContent = document.getElementById('groupReportContent');
@@ -625,6 +731,35 @@
         studentSelect.addEventListener('change', generateIndividualReport);
         generateIndividualReportBtn.addEventListener('click', generateIndividualReport);
         exportIndividualPdfBtn.addEventListener('click', exportIndividualToPdf);
+        
+        // Habilitar/deshabilitar campos de filtro según selección
+        filterAll.addEventListener('change', () => {
+            filterMin.disabled = true;
+            filterMax.disabled = true;
+            filterGreaterValue.disabled = true;
+            filterLessValue.disabled = true;
+        });
+        
+        filterRange.addEventListener('change', () => {
+            filterMin.disabled = false;
+            filterMax.disabled = false;
+            filterGreaterValue.disabled = true;
+            filterLessValue.disabled = true;
+        });
+        
+        filterGreater.addEventListener('change', () => {
+            filterMin.disabled = true;
+            filterMax.disabled = true;
+            filterGreaterValue.disabled = false;
+            filterLessValue.disabled = true;
+        });
+        
+        filterLess.addEventListener('change', () => {
+            filterMin.disabled = true;
+            filterMax.disabled = true;
+            filterGreaterValue.disabled = true;
+            filterLessValue.disabled = false;
+        });
         
         generateGroupReportBtn.addEventListener('click', generateGroupReport);
         exportGroupPdfBtn.addEventListener('click', exportGroupToPdf);
@@ -1329,13 +1464,7 @@
         function generateGroupReport() {
             groupReportContent.innerHTML = '';
             
-            // Calcular promedios y agrupar estudiantes
-            const studentGroups = {
-                low: [],    // < 3.0
-                medium: [], // 3.0 - 4.0
-                high: []     // > 4.0
-            };
-            
+            // Calcular promedios de todos los estudiantes
             students.forEach(student => {
                 let totalWeightedScore = 0;
                 let totalWeight = 0;
@@ -1346,108 +1475,120 @@
                     totalWeight += evaluation.weight;
                 });
                 
-                const finalScore = totalWeight > 0 ? (totalWeightedScore / (totalWeight / 100)) : 0;
-                student.finalScore = finalScore;
-                
-                if (finalScore < 3.0) {
-                    studentGroups.low.push(student);
-                } else if (finalScore <= 4.0) {
-                    studentGroups.medium.push(student);
-                } else {
-                    studentGroups.high.push(student);
-                }
+                student.finalScore = totalWeight > 0 ? (totalWeightedScore / (totalWeight / 100)) : 0;
             });
             
-            // Generar reporte por grupo
-            // Grupo bajo
-            if (studentGroups.low.length > 0) {
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'group-report';
-                
-                const groupTitle = document.createElement('h3');
-                groupTitle.className = 'group-title';
-                groupTitle.textContent = `Estudiantes con promedio menor a 3.0 (${studentGroups.low.length})`;
-                groupDiv.appendChild(groupTitle);
-                
-                const groupMessage = document.createElement('p');
-                groupMessage.className = 'group-message';
-                groupMessage.textContent = 'Estos estudiantes necesitan apoyo adicional para alcanzar los objetivos del curso.';
-                groupDiv.appendChild(groupMessage);
-                
-                const groupTable = document.createElement('table');
-                const headerRow = document.createElement('tr');
-                headerRow.innerHTML = '<th>Nombre</th><th>ID</th><th>Promedio</th>';
-                groupTable.appendChild(headerRow);
-                
-                studentGroups.low.forEach(student => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td>${student.name}</td><td>${student.id}</td><td>${student.finalScore.toFixed(2)}</td>`;
-                    groupTable.appendChild(row);
-                });
-                
-                groupDiv.appendChild(groupTable);
-                groupReportContent.appendChild(groupDiv);
+            // Filtrar estudiantes según criterios seleccionados
+            let filteredStudents = [...students];
+            
+            if (filterRange.checked) {
+                const min = parseFloat(filterMin.value) || 0;
+                const max = parseFloat(filterMax.value) || 5;
+                filteredStudents = filteredStudents.filter(student => 
+                    student.finalScore >= min && student.finalScore <= max
+                );
+            } else if (filterGreater.checked) {
+                const value = parseFloat(filterGreaterValue.value) || 0;
+                filteredStudents = filteredStudents.filter(student => 
+                    student.finalScore >= value
+                );
+            } else if (filterLess.checked) {
+                const value = parseFloat(filterLessValue.value) || 0;
+                filteredStudents = filteredStudents.filter(student => 
+                    student.finalScore <= value
+                );
             }
             
-            // Grupo medio
-            if (studentGroups.medium.length > 0) {
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'group-report';
-                
-                const groupTitle = document.createElement('h3');
-                groupTitle.className = 'group-title';
-                groupTitle.textContent = `Estudiantes con promedio entre 3.0 y 4.0 (${studentGroups.medium.length})`;
-                groupDiv.appendChild(groupTitle);
-                
-                const groupMessage = document.createElement('p');
-                groupMessage.className = 'group-message';
-                groupMessage.textContent = 'Estos estudiantes están aprobados pero pueden mejorar con un poco más de esfuerzo.';
-                groupDiv.appendChild(groupMessage);
-                
-                const groupTable = document.createElement('table');
-                const headerRow = document.createElement('tr');
-                headerRow.innerHTML = '<th>Nombre</th><th>ID</th><th>Promedio</th>';
-                groupTable.appendChild(headerRow);
-                
-                studentGroups.medium.forEach(student => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td>${student.name}</td><td>${student.id}</td><td>${student.finalScore.toFixed(2)}</td>`;
-                    groupTable.appendChild(row);
-                });
-                
-                groupDiv.appendChild(groupTable);
-                groupReportContent.appendChild(groupDiv);
+            if (filteredStudents.length === 0) {
+                groupReportContent.innerHTML = '<p>No hay estudiantes que cumplan con los criterios de filtrado seleccionados.</p>';
+                groupReportPreview.classList.remove('hidden');
+                exportGroupPdfBtn.disabled = true;
+                return;
             }
             
-            // Grupo alto
-            if (studentGroups.high.length > 0) {
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'group-report';
+            // Ordenar estudiantes por nota (de mayor a menor)
+            filteredStudents.sort((a, b) => b.finalScore - a.finalScore);
+            
+            // Generar tabla de resultados
+            const table = document.createElement('table');
+            const headerRow = document.createElement('tr');
+            headerRow.innerHTML = '<th>#</th><th>Nombre</th><th>ID</th><th>Promedio</th><th>Estado</th>';
+            table.appendChild(headerRow);
+            
+            filteredStudents.forEach((student, index) => {
+                const row = document.createElement('tr');
                 
-                const groupTitle = document.createElement('h3');
-                groupTitle.className = 'group-title';
-                groupTitle.textContent = `Estudiantes con promedio mayor a 4.0 (${studentGroups.high.length})`;
-                groupDiv.appendChild(groupTitle);
+                // Número
+                const numberCell = document.createElement('td');
+                numberCell.textContent = index + 1;
+                row.appendChild(numberCell);
                 
-                const groupMessage = document.createElement('p');
-                groupMessage.className = 'group-message';
-                groupMessage.textContent = '¡Excelente trabajo! Estos estudiantes están destacando en el curso.';
-                groupDiv.appendChild(groupMessage);
+                // Nombre
+                const nameCell = document.createElement('td');
+                nameCell.textContent = student.name;
+                row.appendChild(nameCell);
                 
-                const groupTable = document.createElement('table');
-                const headerRow = document.createElement('tr');
-                headerRow.innerHTML = '<th>Nombre</th><th>ID</th><th>Promedio</th>';
-                groupTable.appendChild(headerRow);
+                // ID
+                const idCell = document.createElement('td');
+                idCell.textContent = student.id;
+                row.appendChild(idCell);
                 
-                studentGroups.high.forEach(student => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td>${student.name}</td><td>${student.id}</td><td>${student.finalScore.toFixed(2)}</td>`;
-                    groupTable.appendChild(row);
-                });
+                // Promedio
+                const scoreCell = document.createElement('td');
+                scoreCell.textContent = student.finalScore.toFixed(2);
+                row.appendChild(scoreCell);
                 
-                groupDiv.appendChild(groupTable);
-                groupReportContent.appendChild(groupDiv);
-            }
+                // Estado
+                const statusCell = document.createElement('td');
+                if (student.finalScore >= 3.0) {
+                    statusCell.innerHTML = '<span style="color: var(--color-success)">Aprobado</span>';
+                } else {
+                    statusCell.innerHTML = '<span style="color: var(--color-danger)">No aprobado</span>';
+                }
+                row.appendChild(statusCell);
+                
+                table.appendChild(row);
+            });
+            
+            // Estadísticas resumen
+            const statsDiv = document.createElement('div');
+            statsDiv.className = 'group-report';
+            
+            const statsTitle = document.createElement('h3');
+            statsTitle.className = 'group-title';
+            statsTitle.textContent = 'Resumen Estadístico';
+            statsDiv.appendChild(statsTitle);
+            
+            const count = filteredStudents.length;
+            const approved = filteredStudents.filter(s => s.finalScore >= 3.0).length;
+            const notApproved = count - approved;
+            const average = filteredStudents.reduce((sum, s) => sum + s.finalScore, 0) / count;
+            const maxScore = Math.max(...filteredStudents.map(s => s.finalScore));
+            const minScore = Math.min(...filteredStudents.map(s => s.finalScore));
+            
+            const statsList = document.createElement('ul');
+            statsList.style.listStyleType = 'none';
+            statsList.style.paddingLeft = '0';
+            
+            const items = [
+                `Total estudiantes: ${count}`,
+                `Aprobados: ${approved} (${((approved / count) * 100).toFixed(1)}%)`,
+                `No aprobados: ${notApproved} (${((notApproved / count) * 100).toFixed(1)}%)`,
+                `Promedio general: ${average.toFixed(2)}`,
+                `Nota máxima: ${maxScore.toFixed(2)}`,
+                `Nota mínima: ${minScore.toFixed(2)}`
+            ];
+            
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                li.style.marginBottom = '0.5rem';
+                statsList.appendChild(li);
+            });
+            
+            statsDiv.appendChild(statsList);
+            groupReportContent.appendChild(statsDiv);
+            groupReportContent.appendChild(table);
             
             // Mostrar reporte
             groupReportPreview.classList.remove('hidden');
@@ -1555,64 +1696,118 @@
         
         function exportGroupToPdf() {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            
+            // Configuración del PDF según selección del usuario
+            const size = pageSize.value;
+            const orientation = pageOrientation.value;
+            
+            let pageWidth, pageHeight;
+            if (size === 'letter') {
+                pageWidth = orientation === 'portrait' ? 216 : 279;
+                pageHeight = orientation === 'portrait' ? 279 : 216;
+            } else { // legal
+                pageWidth = orientation === 'portrait' ? 216 : 356;
+                pageHeight = orientation === 'portrait' ? 356 : 216;
+            }
+            
+            const doc = new jsPDF({
+                orientation: orientation,
+                unit: 'mm',
+                format: [pageWidth, pageHeight]
+            });
             
             // Título
             doc.setFontSize(18);
             doc.setTextColor(0, 123, 255);
-            doc.text('Reporte Académico Grupal', 105, 20, { align: 'center' });
+            doc.text('Reporte Académico Grupal', pageWidth / 2, 20, { align: 'center' });
             
-            let y = 40;
+            // Filtros aplicados
+            let filterText = 'Filtros aplicados: ';
+            if (filterAll.checked) {
+                filterText += 'Todos los estudiantes';
+            } else if (filterRange.checked) {
+                filterText += `Nota entre ${filterMin.value} y ${filterMax.value}`;
+            } else if (filterGreater.checked) {
+                filterText += `Nota mayor o igual a ${filterGreaterValue.value}`;
+            } else if (filterLess.checked) {
+                filterText += `Nota menor o igual a ${filterLessValue.value}`;
+            }
             
-            // Grupos
-            const groupDivs = groupReportContent.querySelectorAll('.group-report');
-            groupDivs.forEach((groupDiv, index) => {
-                if (index > 0 && y > 250) {
-                    doc.addPage();
-                    y = 20;
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text(filterText, 20, 30);
+            
+            // Estadísticas
+            const statsDiv = groupReportContent.querySelector('.group-report');
+            const statsTitle = statsDiv.querySelector('.group-title').textContent;
+            const statsItems = statsDiv.querySelectorAll('li');
+            
+            doc.setFontSize(14);
+            doc.text(statsTitle, 20, 45);
+            
+            let y = 55;
+            doc.setFontSize(10);
+            statsItems.forEach(item => {
+                doc.text(`• ${item.textContent}`, 20, y);
+                y += 7;
+            });
+            
+            // Tabla de estudiantes
+            y += 10;
+            doc.setFontSize(14);
+            doc.text('Listado de Estudiantes', 20, y);
+            y += 10;
+            
+            const table = groupReportContent.querySelector('table');
+            const rows = table.querySelectorAll('tr');
+            
+            // Configurar datos para autotable
+            const headers = [];
+            const data = [];
+            
+            // Encabezados
+            const headerCells = rows[0].querySelectorAll('th');
+            headerCells.forEach(cell => {
+                headers.push(cell.textContent);
+            });
+            
+            // Filas de datos
+            for (let i = 1; i < rows.length; i++) {
+                const rowData = [];
+                const cells = rows[i].querySelectorAll('td');
+                
+                cells.forEach(cell => {
+                    rowData.push(cell.textContent);
+                });
+                
+                data.push(rowData);
+            }
+            
+            // Configuración de autotable
+            doc.autoTable({
+                startY: y,
+                head: [headers],
+                body: data,
+                margin: { left: 20 },
+                styles: {
+                    fontSize: 8,
+                    cellPadding: 2,
+                    overflow: 'linebreak'
+                },
+                columnStyles: {
+                    0: { cellWidth: 10 },
+                    1: { cellWidth: 'auto' },
+                    2: { cellWidth: 'auto' },
+                    3: { cellWidth: 20 },
+                    4: { cellWidth: 20 }
+                },
+                didDrawPage: function(data) {
+                    // Footer
+                    doc.setFontSize(8);
+                    doc.setTextColor(100);
+                    const pageCount = doc.internal.getNumberOfPages();
+                    doc.text(`Página ${data.pageNumber} de ${pageCount}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
                 }
-                
-                const title = groupDiv.querySelector('.group-title').textContent;
-                const message = groupDiv.querySelector('.group-message').textContent;
-                const table = groupDiv.querySelector('table');
-                const rows = table.querySelectorAll('tr');
-                
-                // Grupo título
-                doc.setFontSize(14);
-                doc.setTextColor(0, 0, 0);
-                doc.text(title, 20, y);
-                y += 10;
-                
-                // Mensaje
-                doc.setFontSize(10);
-                doc.text(message, 20, y);
-                y += 10;
-                
-                // Tabla
-                doc.setFontSize(10);
-                
-                // Encabezados
-                const headers = rows[0].querySelectorAll('th');
-                doc.text(headers[0].textContent, 20, y);
-                doc.text(headers[1].textContent, 80, y);
-                doc.text(headers[2].textContent, 140, y);
-                y += 10;
-                
-                // Filas
-                for (let i = 1; i < rows.length; i++) {
-                    if (y > 270) {
-                        doc.addPage();
-                        y = 20;
-                    }
-                    
-                    const cells = rows[i].querySelectorAll('td');
-                    doc.text(cells[0].textContent, 20, y);
-                    doc.text(cells[1].textContent, 80, y);
-                    doc.text(cells[2].textContent, 140, y);
-                    y += 10;
-                }
-                
-                y += 15;
             });
             
             // Guardar PDF
