@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -246,7 +245,7 @@
 
         .competence-selector {
             margin-top: 10px;
-            padding: 10px;
+            padding: 5px;
             background-color: white;
             border-radius: 4px;
             border: 1px solid var(--border-color);
@@ -270,7 +269,7 @@
         .competence-checkbox {
             display: flex;
             align-items: center;
-            padding: 3px 8px;
+            padding: 3px 5px;
             background-color: var(--light-gray);
             border-radius: 3px;
             font-size: 12px;
@@ -349,7 +348,7 @@
             background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 10px;
             border-radius: 4px;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -375,7 +374,7 @@
         }
 
         .btn-success:hover {
-            background-color: var(--success-color);
+            background-color: var (--success-color);
         }
 
         .btn-warning {
@@ -409,7 +408,7 @@
 
         .student-item {
             padding: 10px 15px;
-            border-bottom: 1px solid var(--light-gray);
+            border-bottom: 1px solid var (--light-gray);
             cursor: pointer;
             transition: all 0.3s ease;
         }
@@ -431,7 +430,7 @@
         }
 
         .report-header {
-            border-bottom: 2px solid var(--light-gray);
+            border-bottom: 1px solid var(--light-gray);
             padding-bottom: 10px;
             margin-bottom: 20px;
         }
@@ -443,13 +442,13 @@
         }
 
         .report-section {
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .report-section h3 {
             margin-bottom: 10px;
             padding-bottom: 5px;
-            border-bottom: 1px solid var(--light-gray);
+            border-bottom: 1px solid var (--light-gray);
         }
 
         .grades-table {
@@ -471,7 +470,7 @@
 
         .chart-container {
             height: 300px;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
         }
 
         .competence-container {
@@ -509,7 +508,7 @@
         .prediction-value {
             font-size: 18px;
             font-weight: 500;
-            color: var(--secondary-color);
+            color: var (--secondary-color);
             margin-top: 10px;
         }
 
@@ -561,7 +560,7 @@
             display: flex;
             justify-content: space-between;
             padding: 8px 10px;
-            border-bottom: 1px solid var(--light-gray);
+            border-bottom: 1px solid var (--light-gray);
         }
 
         .risk-student-item .name {
@@ -573,10 +572,10 @@
         }
 
         .filter-container {
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             padding: 15px;
             background-color: var(--light-gray);
-            border-radius: 4px;
+            border-radius: 1px;
             display: flex;
             gap: 15px;
             flex-wrap: wrap;
@@ -1118,7 +1117,7 @@ Mapeo de Competencias a Evaluaciones
 <h2 id="studentName">Seleccione un estudiante</h2>
 <div id="studentInfo" style="color: var(--dark-gray);"></div>
 </div>
-<div class="report-body">
+<!-- Elimino el grid de dos columnas para el reporte individual -->
 <div class="report-section">
 <h3>Evaluaciones</h3>
 <table class="grades-table" id="gradesTable">
@@ -1129,7 +1128,8 @@ Mapeo de Competencias a Evaluaciones
         <th>Nota</th>
         <th>Peso</th>
         <th>Contribución</th>
-    </tr>
+        <th>Competencias</th>
+      </tr>
 </thead>
 <tbody>
     <!-- Las evaluaciones se generarán dinámicamente -->
@@ -1137,12 +1137,15 @@ Mapeo de Competencias a Evaluaciones
 </table>
 </div>
 
-<div class="report-section">
-<h3>Competencias</h3>
-<div class="competence-container" id="competenceContainer">
-<!-- Las competencias se generarán dinámicamente -->
-</div>
-</div>
+<!-- Competencias debajo de la tabla, ocupando todo el ancho -->
+<div class="report-section" style="margin-top: 10px;">
+  <div style="display: flex; align-items: center; margin-bottom: 8px;">
+    <h3 style="margin: 0;">Competencias</h3>
+    <span id="competenceSelectorContainer" style="margin-left: 16px;"></span>
+  </div>
+  <div class="competence-container" id="competenceContainer" style="margin-top: 10px;">
+    <!-- Las competencias se generarán dinámicamente -->
+  </div>
 </div>
 
 <div class="prediction-container" id="predictionContainer">
@@ -1500,38 +1503,32 @@ return 'Fecha inválida';
 },
 
 // Verificar si los pesos suman 100%
+// utils.validateWeights (sólo cambia la lógica de validación)
 validateWeights: () => {
-const weights = appState.config.weights || {};
-const sum = Object.values(weights).reduce((acc, val) => {
-const num = parseFloat(val) || 0;
-return acc + num;
-}, 0);
-
-// Tolerancia pequeña para errores de redondeo
-const isValid = Math.abs(sum - 100) < 0.001;
-
-if (elements.weightValidation) {
-elements.weightValidation.classList.toggle('valid', isValid);
-elements.weightValidation.classList.toggle('invalid', !isValid);
-elements.weightValidation.textContent = isValid
-? "Los pesos suman 100% correctamente"
-: `Los pesos suman ${sum.toFixed(1)}% (debe ser exactamente 100%)`;
-}
-return isValid;
-},
+    const weights = appState.config.weights || {};
+    const sum = Object.values(weights).reduce((acc, val) => acc + (parseFloat(val)||0), 0);
+    // Ahora validamos que sum ≤ 100 con pequeña tolerancia
+    const isValid = sum <= 100 + 0.001;
+    if (elements.weightValidation) {
+      elements.weightValidation.classList.toggle('valid', isValid);
+      elements.weightValidation.classList.toggle('invalid', !isValid);
+      elements.weightValidation.textContent = isValid
+        ? `Los pesos suman ${sum.toFixed(1)}% (válido)` 
+        : `Los pesos suman ${sum.toFixed(1)}% (deben ser ≤ 100%)`;
+    }
+    return isValid;
+  },
 
 // Calcular nota final ponderada para un estudiante (adaptada para reportes parciales)
 calculateFinalGrade: (student, filterCompetences = [], dateRange = {}) => {
-if (!student || !appState.config.weights) return 0;
-
-let finalGrade = 0;
-let totalWeight = 0;
-let completedWeight = 0;
-
-for (const evalKey in appState.config.weights) {
-// Obtener el peso de la evaluación
-const weight = parseFloat(appState.config.weights[evalKey]) / 100 || 0;
-totalWeight += weight;
+    if (!student || !appState.config.weights) return 0;
+  
+    let sumWeightedGrades = 0;
+    let sumCompletedWeights = 0;
+  
+    for (const evalKey in appState.config.weights) {
+      const weight = (parseFloat(appState.config.weights[evalKey]) || 0) / 100;
+    totalWeight += weight;
 
 // Verificar si debemos filtrar por competencia
 if (filterCompetences.length > 0) {
@@ -1559,14 +1556,16 @@ try {
 }
 
 if (student[evalKey] !== undefined && student[evalKey] !== null) {
-const grade = parseFloat(student[evalKey]) || 0;
-finalGrade += grade * weight;
-completedWeight += weight;
-}
-}
+    const grade = student[evalKey];
+    if (grade !== undefined && grade !== null) {
+      sumWeightedGrades += grade * weight;
+      sumCompletedWeights += weight;
+    }
+  }
+
 
 // Si no hay evaluaciones completadas, retornar 0
-if (completedWeight === 0) return 0;
+if (sumCompletedWeights === 0) return 0;
 
 // Si están todas las evaluaciones completadas o no hay filtros, usar el peso total
 if (completedWeight === totalWeight || (filterCompetences.length === 0 && !dateRange.start && !dateRange.end)) {
@@ -1574,8 +1573,8 @@ return finalGrade / totalWeight * 100;
 }
 
 // Para reportes parciales, calcular proporcionalmente al peso de las evaluaciones completadas
-return finalGrade / completedWeight * 100;
-},
+return sumWeightedGrades / sumCompletedWeights;
+}},
 
 // Calcular estadísticas de grupo
 calculateGroupStats: (students, filterCompetences = [], dateRange = {}) => {
@@ -1614,80 +1613,50 @@ studentsAtRisk: studentsAtRisk
 
 // Predecir nota requerida en evaluaciones restantes
 predictRequiredGrade: (student, filterCompetences = []) => {
-if (!student || !appState.config.weights) {
-return { possible: false, message: "No hay datos suficientes para realizar una predicción" };
-}
-
-// Obtener evaluaciones pendientes (no tienen nota asignada)
-const pendingEvaluations = [];
-let completedWeight = 0;
-let currentContribution = 0;
-
-for (const evalKey in appState.config.weights) {
-// Verificar si debemos filtrar por competencia
-if (filterCompetences.length > 0) {
-const evalCompetences = appState.processedData.competenceMappings[evalKey] || [];
-if (!evalCompetences.some(comp => filterCompetences.includes(comp))) {
-continue;
-}
-}
-
-const weight = parseFloat(appState.config.weights[evalKey]) / 100 || 0;
-
-if (student[evalKey] !== undefined && student[evalKey] !== null) {
-// Evaluación ya completada
-const grade = parseFloat(student[evalKey]) || 0;
-currentContribution += grade * weight;
-completedWeight += weight;
-} else {
-// Evaluación pendiente
-pendingEvaluations.push(evalKey);
-}
-}
-
-// Calcular peso de evaluaciones pendientes
-const pendingWeight = 1 - completedWeight;
-
-if (pendingWeight <= 0) {
-const finalGrade = currentContribution / completedWeight;
-const passingGrade = appState.config.passingGrade || 3.0;
-
-if (finalGrade >= passingGrade) {
-return {
-possible: true,
-message: "El estudiante ya tiene nota aprobatoria con las evaluaciones actuales.",
-requiredGrade: 0,
-evaluations: []
-};
-} else {
-return {
-possible: false,
-message: "El estudiante no tiene evaluaciones pendientes y su nota actual no es aprobatoria."
-};
-}
-}
-
-// Calcular la nota mínima requerida para aprobar
-const passingGrade = appState.config.passingGrade || 3.0;
-const requiredContribution = passingGrade - currentContribution;
-
-// Calcular la nota que necesitaría en cada evaluación pendiente
-const requiredGrade = requiredContribution / pendingWeight;
-
-if (requiredGrade > 5) {
-return {
-possible: false,
-message: `No es posible alcanzar la nota mínima de ${passingGrade.toFixed(1)} con las evaluaciones pendientes.`
-};
-}
-
-return {
-possible: true,
-message: `El estudiante necesita obtener la siguiente nota en ${pendingEvaluations.length > 1 ? 'cada una de las evaluaciones' : 'la evaluación'} pendientes:`,
-requiredGrade: requiredGrade,
-evaluations: pendingEvaluations
-};
-},
+    if (!student || !appState.config.weights) {
+      return { possible: false, message: "No hay datos suficientes para predicción" };
+    }
+    let completedContribution = 0, completedWeight = 0;
+    let pendingEvals = [];
+  
+    for (const evalKey in appState.config.weights) {
+      // aplicar filtros…
+      const weight = (parseFloat(appState.config.weights[evalKey]) || 0) / 100;
+      const grade = student[evalKey];
+      if (grade !== undefined && grade !== null) {
+        completedContribution += grade * weight;
+        completedWeight += weight;
+      } else {
+        pendingEvals.push(evalKey);
+      }
+    }
+  
+    const passing = appState.config.passingGrade || 3.0;
+    const remainingWeight = 1 - completedWeight;
+    if (remainingWeight <= 0) {
+      const current = completedContribution / completedWeight;
+      return current >= passing
+        ? { possible: true, message: "Ya aprobó con lo actual.", requiredGrade: 0, evaluations: [] }
+        : { possible: false, message: "No hay evaluaciones pendientes." };
+    }
+  
+    // nota media necesaria en pendientes:
+    const neededTotal = passing * 1;          // para un 3.0 final en escala 0–5
+    const requiredSum = neededTotal - completedContribution;
+    const requiredGrade = requiredSum / remainingWeight;
+  
+    if (requiredGrade > 5) {
+      return { possible: false,
+        message: `Imposible alcanzar ${passing.toFixed(2)} con evaluaciones restantes.` };
+    }
+  
+    return {
+      possible: true,
+      message: `Necesita en escala 0–5 las siguientes notas:`,
+      requiredGrade: requiredGrade,
+      evaluations: pendingEvals
+    };
+  },
 
 // Calcular rendimiento por competencia
 calculateCompetencePerformance: (students, competences, dateRange = {}) => {
@@ -1778,6 +1747,18 @@ calculateEvaluationCompetencePerformance: (students, evalName) => {
     
     // Obtener las competencias asociadas a esta evaluación
     const evalCompetences = appState.processedData.competenceMappings[evalName] || [];
+    const compsHtml = evalCompetences.length
+  ? evalCompetences.map(c => `<span class="competence-tag">${c}</span>`).join(' ')
+  : '—';
+
+  row.innerHTML = `
+  <td>${evalName}</td>
+  <td>${utils.formatDate(evalDate)}</td>
+  <td>${grade!=null ? utils.formatNumber(grade) : 'Pendiente'}</td>
+  <td>${utils.formatNumber(weight*100)}%</td>
+  <td>${grade!=null ? utils.formatNumber(grade*weight) : 'N/A'}</td>
+  <td>${compsHtml}</td>   <!-- <– insertado -->
+`;
     
     // Inicializar estructura para cada competencia
     evalCompetences.forEach(comp => {
@@ -1829,31 +1810,21 @@ getFilteredEvaluations: (competenceFilter) => {
 
 // Obtener competencias únicas
 getUniqueCompetences: () => {
+    // Devolver todas las competencias cargadas, no solo las asociadas
+    if (!appState.processedData.competences) return [];
     const competences = new Set();
-
-    if (!appState.processedData.competenceMappings) {
-        return [];
-    }
-
-    // Recopilar todas las competencias de los mapeos
-    Object.values(appState.processedData.competenceMappings).forEach(compList => {
-        if (compList && compList.length) {
-            compList.forEach(comp => competences.add(comp));
-        }
+    appState.processedData.competences.forEach(c => {
+        if (c.Competencia) competences.add(c.Competencia);
     });
-
     return Array.from(competences);
 },
 
 // Mostrar vista previa
 showPreview: (title, content, exportType, filename) => {
     if (!elements.previewContainer || !elements.previewTitle || !elements.previewBody) return;
-    
     elements.previewTitle.textContent = title;
-    elements.previewBody.innerHTML = content;
+    elements.previewBody.innerHTML = `<div style='background:#fff;padding:32px 24px;border-radius:8px;max-width:900px;margin:0 auto;'>${content}</div>`;
     elements.previewContainer.style.display = 'flex';
-    
-    // Guardar datos para exportación
     appState.exportData = {
         type: exportType,
         content: content,
@@ -2344,6 +2315,14 @@ fieldSelectionChange: () => {
                     competenceGroup.appendChild(label);
                 });
             }
+
+            // Agregar botón "Asociar competencias"
+            const associateBtn = document.createElement('button');
+            associateBtn.className = 'btn btn-info btn-sm';
+            associateBtn.textContent = 'Asociar competencias';
+            associateBtn.style.marginTop = '5px';
+            associateBtn.onclick = () => openCompetenceModal(eval);
+            weightItem.querySelector('.weight-item-content').appendChild(associateBtn);
         });
 
         // Agregar event listeners a inputs de peso
@@ -2889,10 +2868,17 @@ const cloneCompetenceContainer = individualReport.querySelector('.competence-con
 if (cloneCompetenceContainer) {
     cloneCompetenceContainer.innerHTML = '';
     
-    // Obtener competencias únicas (filtradas si es necesario)
-    let competencesToShow = utils.getUniqueCompetences();
+    // Mostrar solo competencias seleccionadas activamente o asociadas a las evaluaciones filtradas
+    let competencesToShow = [];
     if (activeCompetences.length > 0) {
-        competencesToShow = competencesToShow.filter(comp => activeCompetences.includes(comp));
+        competencesToShow = activeCompetences;
+    } else {
+        const evals = Object.keys(appState.processedData.competenceMappings);
+        evals.forEach(evalName => {
+            (appState.processedData.competenceMappings[evalName] || []).forEach(comp => {
+                if (!competencesToShow.includes(comp)) competencesToShow.push(comp);
+            });
+        });
     }
     
     competencesToShow.forEach(compName => {
@@ -2946,11 +2932,25 @@ if (cloneCompetenceContainer) {
         // Crear elemento de competencia
         const compElement = document.createElement('div');
         compElement.className = 'competence-item';
+        let mensaje = '';
+        if (evalCount > 0) {
+            if (compAvg >= 3.0) {
+                mensaje = `<div style='color:var(--success-color);margin-top:8px;'>¡Buen desempeño en esta competencia!</div>`;
+            } else {
+                mensaje = `<div style='color:var(--warning-color);margin-top:8px;'>Recomendaciones para mejorar:<ul style='margin:4px 0 0 18px;padding:0;font-size:13px;'>
+                    <li>Asistencia continua a clase</li>
+                    <li>Asistencia continua a asesorías con el profesor</li>
+                    <li>Asistencia continua con el monitor del curso</li>
+                    <li>Revisión y corrección de tareas asignadas de mejoramiento</li>
+                </ul></div>`;
+            }
+        }
         compElement.innerHTML = `
             <div><strong>${compName}</strong>${evalCount > 0 ? ` - ${utils.formatNumber(compAvg)}` : ' - Sin datos'}</div>
             <div class="competence-progress">
                 <div class="competence-progress-bar" style="width: ${achievementPercentage}%"></div>
             </div>
+            ${mensaje}
         `;
         
         // Agregar indicadores
@@ -3264,6 +3264,11 @@ if (competenceChart && appState.charts.competenceChart) {
 }
 
 // Construir el contenido del reporte
+const safeGroupStatsContainer = groupStatsContainer && groupStatsContainer.outerHTML ? groupStatsContainer.outerHTML : '';
+const safeGroupChartImg = groupChartImg || 'No hay datos disponibles';
+const safeCompetenceChartImg = competenceChartImg || 'No hay datos disponibles';
+const safeRiskStudentsList = riskStudentsList && riskStudentsList.outerHTML ? riskStudentsList.outerHTML : 'No hay estudiantes en riesgo';
+
 const reportContent = `
     <div style="margin-bottom: 20px;">
         <h2>Reporte Grupal - ${appState.config.selectedGroup}</h2>
@@ -3282,33 +3287,36 @@ const reportContent = `
         </div>
     </div>
     
-    <div>${groupStatsContainer.outerHTML}</div>
+    <div>${safeGroupStatsContainer}</div>
     
     <div style="margin: 20px 0;">
         <h3>Distribución de Calificaciones</h3>
-        ${groupChartImg}
+        ${safeGroupChartImg}
     </div>
     
     <div style="margin: 20px 0;">
         <h3>Rendimiento por Competencia</h3>
-        ${competenceChartImg}
+        ${safeCompetenceChartImg}
     </div>
     
     <div style="margin: 20px 0;">
         <h3>Estudiantes en Riesgo</h3>
-        ${riskStudentsList.outerHTML}
+        ${safeRiskStudentsList}
     </div>
 `;
 
-utils.showPreview(
-    'Vista Previa - Reporte Grupal',
-    reportContent,
-    'pdf',
-    `reporte_grupal_${appState.config.selectedGroup.replace(/\s+/g, '_')}.pdf`
-);
-},
-
-// john4
+try {
+    utils.showPreview(
+        'Vista Previa - Reporte Grupal',
+        reportContent,
+        'pdf',
+        `reporte_grupal_${appState.config.selectedGroup.replace(/\s+/g, '_')}.pdf`
+    );
+} catch (error) {
+    console.error('Error al generar el reporte:', error);
+    utils.showMessage('Error al generar el reporte. Por favor, intente nuevamente.', 'error');
+}
+},// john4
 // Exportar reporte grupal a PDF
 exportGroupPdf: () => {
     const performanceFilter = elements.performanceFilter ? elements.performanceFilter.value : 'all';
@@ -4236,64 +4244,68 @@ utils.closePreview();
 
 // Función adaptada para leer archivos Excel y CSV
 async function readExcelOrCsvFile(file) {
-return new Promise((resolve, reject) => {
-const reader = new FileReader();
-
-reader.onload = (e) => {
-    try {
-        const data = new Uint8Array(e.target.result);
-        let result = {};
-        
-        // Determinar tipo de archivo
-        const fileExtension = file.name.split('.').pop().toLowerCase();
-        
-        if (fileExtension === 'csv') {
-            // Procesar archivo CSV
-            const csvText = new TextDecoder().decode(data);
-            const sheets = {};
-            
-            // Para archivos CSV, usamos el nombre del archivo como nombre de hoja
-            const sheetName = file.name.replace(/\.[^/.]+$/, "");
-            
-            // Convertir CSV a objeto JSON
-            const jsonData = csvToJson(csvText);
-            sheets[sheetName] = jsonData;
-            
-            resolve(sheets);
-        } else {
-            // Procesar archivo Excel
-            const workbook = XLSX.read(data, { 
-                type: 'array', 
-                cellDates: true,
-                cellStyles: true,
-                dateNF: 'yyyy-mm-dd'
-            });
-            
-            const sheets = {};
-            
-            // Procesar cada hoja del archivo
-            workbook.SheetNames.forEach(sheetName => {
-                const worksheet = workbook.Sheets[sheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-                    raw: false,
-                    dateNF: 'yyyy-mm-dd'
-                });
-                sheets[sheetName] = jsonData;
-            });
-            
-            resolve(sheets);
+    return new Promise((resolve, reject) => {
+        if (typeof XLSX === 'undefined') {
+            reject(new Error('La librería XLSX no está disponible.'));
+            return;
         }
-    } catch (error) {
-        reject(new Error(`Error al procesar el archivo: ${error.message}`));
-    }
-};
-
-reader.onerror = (error) => {
-    reject(new Error(`Error al leer el archivo: ${error.target.error.message}`));
-};
-
-reader.readAsArrayBuffer(file);
-});
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const fileExtension = file.name.split('.').pop().toLowerCase();
+                if (fileExtension === 'csv') {
+                    const csvText = new TextDecoder().decode(data);
+                    const sheets = {};
+                    const sheetName = file.name.replace(/\.[^/.]+$/, "");
+                    const jsonData = csvToJson(csvText);
+                    if (!jsonData || jsonData.length === 0) {
+                        reject(new Error('El archivo CSV está vacío o mal formado.'));
+                        return;
+                    }
+                    sheets[sheetName] = jsonData;
+                    resolve(sheets);
+                } else {
+                    let workbook;
+                    try {
+                        workbook = XLSX.read(data, {
+                            type: 'array',
+                            cellDates: true,
+                            cellStyles: true,
+                            dateNF: 'yyyy-mm-dd'
+                        });
+                    } catch (err) {
+                        reject(new Error('No se pudo leer el archivo Excel. ¿Está corrupto o en formato no soportado?'));
+                        return;
+                    }
+                    const sheets = {};
+                    let hasData = false;
+                    workbook.SheetNames.forEach(sheetName => {
+                        const worksheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+                            raw: false,
+                            dateNF: 'yyyy-mm-dd'
+                        });
+                        if (jsonData && jsonData.length > 0) {
+                            hasData = true;
+                        }
+                        sheets[sheetName] = jsonData;
+                    });
+                    if (!hasData) {
+                        reject(new Error('El archivo Excel no contiene datos útiles.'));
+                        return;
+                    }
+                    resolve(sheets);
+                }
+            } catch (error) {
+                reject(new Error(`Error al procesar el archivo: ${error.message}`));
+            }
+        };
+        reader.onerror = (error) => {
+            reject(new Error(`Error al leer el archivo: ${error.target.error.message}`));
+        };
+        reader.readAsArrayBuffer(file);
+    });
 }
 
 // Función para convertir CSV a JSON
@@ -4540,6 +4552,22 @@ const mappedCompetences = appState.processedData.competenceMappings &&
                         appState.processedData.competenceMappings[evalName] || [];
 const evalDate = appState.config.dates && appState.config.dates[evalName] || 'No asignada';
 
+// Obtener todas las competencias únicas de la hoja seleccionada o de todas
+let uniqueCompetences = [];
+if (selectedSheet && appState.competencesData && appState.competencesData[selectedSheet]) {
+    uniqueCompetences = [...new Set(appState.competencesData[selectedSheet]
+        .filter(c => c.Competencia)
+        .map(c => c.Competencia))];
+} else if (appState.competencesData) {
+    Object.values(appState.competencesData).forEach(sheetData => {
+        const sheetCompetences = [...new Set(sheetData
+            .filter(c => c.Competencia)
+            .map(c => c.Competencia))];
+        uniqueCompetences = [...new Set([...uniqueCompetences, ...sheetCompetences])];
+    });
+}
+
+// Crear item de mapeo
 const mappingItem = document.createElement('div');
 mappingItem.className = 'competence-mapping-item';
 mappingItem.innerHTML = `
@@ -4550,14 +4578,53 @@ mappingItem.innerHTML = `
             <span>${utils.formatDate(evalDate)}</span>
         </div>
     </div>
-    <div class="competence-list">
+    <div class="competence-selector">
+        <h5>Competencias asociadas:</h5>
+        <div class="competence-checkbox-group" id="comp-mapping-group-${evalName}"></div>
+    </div>
+    <div class="competence-list" style="margin-top:10px;">
         ${mappedCompetences.length > 0 
-            ? mappedCompetences.map(comp => `<div class="competence-tag">${comp}</div>`).join('') 
+            ? mappedCompetences.map(comp => `<div class='competence-tag'>${comp}</div>`).join('') 
             : '<em>No hay competencias asociadas</em>'}
     </div>
 `;
-
 elements.competenceMappingBody.appendChild(mappingItem);
+
+// Añadir checkboxes para cada competencia con criterios/indicadores
+const competenceGroup = mappingItem.querySelector(`#comp-mapping-group-${evalName}`);
+if (competenceGroup) {
+    uniqueCompetences.forEach(comp => {
+        const checkboxId = `mapping-comp-${evalName}-${comp.replace(/\s+/g, '-')}`;
+        const isChecked = mappedCompetences.includes(comp);
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = checkboxId;
+        checkbox.className = 'comp-checkbox';
+        checkbox.setAttribute('data-eval', evalName);
+        checkbox.setAttribute('data-comp', comp);
+        checkbox.checked = isChecked;
+        checkbox.addEventListener('change', eventHandlers.competenceCheckboxChange);
+
+        const label = document.createElement('label');
+        label.className = 'competence-checkbox';
+        label.htmlFor = checkboxId;
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(comp));
+
+        // Mostrar criterios/indicadores si existen
+        const indicators = appState.processedData.indicators[comp] || [];
+        if (indicators.length > 0) {
+            const indSpan = document.createElement('span');
+            indSpan.style.fontSize = '11px';
+            indSpan.style.color = '#888';
+            indSpan.style.marginLeft = '6px';
+            indSpan.textContent = `(${indicators.join('; ')})`;
+            label.appendChild(indSpan);
+        }
+
+        competenceGroup.appendChild(label);
+    });
+}
 });
 }
 
@@ -4568,40 +4635,37 @@ const uniqueCompetences = utils.getUniqueCompetences();
 // Filtros para reporte individual
 if (elements.individualCompetenceFilter) {
 elements.individualCompetenceFilter.innerHTML = '';
+// Crear un selector en vez de tags
+const select = document.createElement('select');
+select.id = 'competenceSelector';
+select.style.margin = '0 0 0 8px';
+const optionAll = document.createElement('option');
+optionAll.value = 'all';
+optionAll.textContent = 'Todas las competencias';
+select.appendChild(optionAll);
 uniqueCompetences.forEach(comp => {
-    const tag = document.createElement('div');
-    tag.className = 'competence-filter-tag';
-    tag.setAttribute('data-comp', comp);
-    tag.textContent = comp;
-    
-    tag.addEventListener('click', () => {
-        tag.classList.toggle('active');
-        eventHandlers.filterIndividualByCompetence();
-    });
-    
-    elements.individualCompetenceFilter.appendChild(tag);
+  const option = document.createElement('option');
+  option.value = comp;
+  option.textContent = comp;
+  select.appendChild(option);
 });
+select.addEventListener('change', () => {
+  // Activar solo la competencia seleccionada
+  document.querySelectorAll('.competence-filter-tag').forEach(tag => {
+    tag.classList.remove('active');
+    if (select.value !== 'all' && tag.getAttribute('data-comp') === select.value) {
+      tag.classList.add('active');
+    }
+  });
+  eventHandlers.filterIndividualByCompetence();
+});
+elements.individualCompetenceFilter.appendChild(select);
 }
 }
 
 // Inicializar datepickers para filtros
 function initializeDatepickers() {
 // Eliminar datepickers existentes
-Object.values(appState.datepickers).forEach(dp => {
-if (dp && typeof dp.destroy === 'function') {
-    dp.destroy();
-}
-});
-appState.datepickers = {};
-
-// Datepicker para filtro individual
-if (elements.individualStartDate) {
-appState.datepickers.individualStartDate = flatpickr(elements.individualStartDate, {
-    dateFormat: "Y-m-d",
-    onChange: () => eventHandlers.filterIndividualByCompetence()
-});
-}
-
 if (elements.individualEndDate) {
 appState.datepickers.individualEndDate = flatpickr(elements.individualEndDate, {
     dateFormat: "Y-m-d",
@@ -4745,10 +4809,18 @@ if (!elements.competenceContainer) return;
 
 elements.competenceContainer.innerHTML = '';
 
-// Obtener competencias únicas (filtradas si es necesario)
-let competencesToShow = utils.getUniqueCompetences();
+// Mostrar solo competencias seleccionadas activamente o asociadas a las evaluaciones filtradas
+let competencesToShow = [];
 if (filterCompetences.length > 0) {
-competencesToShow = competencesToShow.filter(comp => filterCompetences.includes(comp));
+    competencesToShow = filterCompetences;
+} else {
+    // Solo mostrar competencias asociadas a las evaluaciones seleccionadas
+    const evals = Object.keys(appState.processedData.competenceMappings);
+    evals.forEach(evalName => {
+        (appState.processedData.competenceMappings[evalName] || []).forEach(comp => {
+            if (!competencesToShow.includes(comp)) competencesToShow.push(comp);
+        });
+    });
 }
 
 competencesToShow.forEach(compName => {
@@ -4802,11 +4874,25 @@ const achievementPercentage = evalCount > 0 ? (compAvg / 5) * 100 : 0;
 // Crear elemento de competencia
 const compElement = document.createElement('div');
 compElement.className = 'competence-item';
+let mensaje = '';
+if (evalCount > 0) {
+    if (compAvg >= 3.0) {
+        mensaje = `<div style='color:var(--success-color);margin-top:8px;'>¡Buen desempeño en esta competencia!</div>`;
+    } else {
+        mensaje = `<div style='color:var(--warning-color);margin-top:8px;'>Recomendaciones para mejorar:<ul style='margin:4px 0 0 18px;padding:0;font-size:13px;'>
+            <li>Asistencia continua a clase</li>
+            <li>Asistencia continua a asesorías con el profesor</li>
+            <li>Asistencia continua con el monitor del curso</li>
+            <li>Revisión y corrección de tareas asignadas de mejoramiento</li>
+        </ul></div>`;
+    }
+}
 compElement.innerHTML = `
     <div><strong>${compName}</strong>${evalCount > 0 ? ` - ${utils.formatNumber(compAvg)}` : ' - Sin datos'}</div>
     <div class="competence-progress">
         <div class="competence-progress-bar" style="width: ${achievementPercentage}%"></div>
     </div>
+    ${mensaje}
 `;
 
 // Agregar indicadores
@@ -4882,10 +4968,27 @@ function renderGroupReport(students, filterCompetences = [], dateRange = {}) {
 if (!elements.groupStatsContainer || !elements.riskStudentsList) return;
 
 if (!students || students.length === 0) {
-utils.showMessage('No hay estudiantes para mostrar.', 'info');
-elements.groupStatsContainer.innerHTML = '<div class="message info">No hay estudiantes para mostrar</div>';
-elements.riskStudentsList.innerHTML = '';
-return;
+  let msg = 'No hay estudiantes para mostrar.';
+  // Sugerencias de competencias a mejorar si el filtro es "bajo"
+  if (appState.filters.group.performance === 'low') {
+    // Buscar competencias con menor promedio en el grupo
+    const allStudents = appState.processedData.students || [];
+    const compPerf = utils.calculateCompetencePerformance(allStudents, appState.processedData.competences, dateRange);
+    // Ordenar por promedio ascendente y tomar las 3 más bajas
+    const sugeridas = Object.entries(compPerf)
+      .filter(([_, perf]) => perf.count > 0)
+      .sort((a, b) => a[1].average - b[1].average)
+      .slice(0, 3)
+      .map(([comp, perf]) => `${comp} (promedio: ${utils.formatNumber(perf.average)})`);
+    if (sugeridas.length > 0) {
+      msg += '<br><br><strong>Sugerencias de competencias a reforzar en el grupo:</strong><ul>' +
+        sugeridas.map(s => `<li>${s}</li>`).join('') + '</ul>';
+    }
+  }
+  elements.groupStatsContainer.innerHTML = `<div class="message info">${msg}</div>`;
+  elements.riskStudentsList.innerHTML = '';
+  utils.showMessage('No hay estudiantes para mostrar.', 'info');
+  return;
 }
 
 // Calcular estadísticas
@@ -5486,90 +5589,88 @@ evalName
 // Preparar datos para el gráfico
 const labels = competences;
 const averages = competences.map(comp => compPerformance[comp] ? compPerformance[comp].average : 0);
-const passRates = competences.map(comp => 
-compPerformance[comp] ? 
-(compPerformance[comp].passStudents / compPerformance[comp].totalStudents) * 100 : 
-0
-);
+const passRates = competences.map(comp => {
+    if (compPerformance[comp] && compPerformance[comp].totalStudents > 0) {
+        return (compPerformance[comp].passStudents / compPerformance[comp].totalStudents) * 100;
+    } else {
+        return 0;
+    }
+});
 
 // Crear gráfico
 const ctx = elements.evalCompetenceChart.getContext('2d');
 appState.charts.evalCompetenceChart = new Chart(ctx, {
-type: 'bar',
-data: {
-    labels: labels,
-    datasets: [
-        {
-            label: 'Promedio',
-            data: averages,
-            backgroundColor: 'rgba(52, 152, 219, 0.7)',
-            borderColor: 'rgba(52, 152, 219, 1)',
-            borderWidth: 1,
-            yAxisID: 'y'
-        },
-        {
-            label: 'Tasa de Aprobación (%)',
-            data: passRates,
-            backgroundColor: 'rgba(46, 204, 113, 0.7)',
-            borderColor: 'rgba(46, 204, 113, 1)',
-            borderWidth: 1,
-            type: 'line',
-            yAxisID: 'y1'
-        }
-    ]
-},
-options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-        y: {
-            beginAtZero: true,
-            position: 'left',
-            title: {
-                display: true,
-                text: 'Promedio'
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [
+            {
+                label: 'Promedio',
+                data: averages,
+                backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                borderColor: 'rgba(52, 152, 219, 1)',
+                borderWidth: 1,
+                yAxisID: 'y'
             },
-            suggestedMax: 5
-        },
-        y1: {
-            beginAtZero: true,
-            position: 'right',
-            title: {
-                display: true,
-                text: 'Tasa de Aprobación (%)'
-            },
-            grid: {
-                drawOnChartArea: false
-            },
-            max: 100
-        },
-        x: {
-            title: {
-                display: true,
-                text: 'Competencias'
-            },
-            ticks: {
-                maxRotation: 45,
-                minRotation: 45
+            {
+                label: 'Tasa de Aprobación (%)',
+                data: passRates,
+                backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                borderColor: 'rgba(46, 204, 113, 1)',
+                borderWidth: 1,
+                type: 'line',
+                yAxisID: 'y1'
             }
-        }
+        ]
     },
-    plugins: {
-        tooltip: {
-            callbacks: {
-                label: function(context) {
-                    const datasetLabel = context.dataset.label;
-                    const value = context.raw;
-                    return `${datasetLabel}: ${value.toFixed(2)}${context.datasetIndex === 1 ? '%' : ''}`;
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                position: 'left',
+                title: {
+                    display: true,
+                    text: 'Promedio'
+                },
+                suggestedMax: 5
+            },
+            y1: {
+                beginAtZero: true,
+                position: 'right',
+                title: {
+                    display: true,
+                    text: 'Tasa de Aprobación (%)'
+                },
+                grid: {
+                    drawOnChartArea: false
+                },
+                max: 100
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Competencias'
                 }
             }
         },
-        title: {
-            display: true,
-            text: `Rendimiento por Competencia - ${evalName}`
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const datasetLabel = context.dataset.label;
+                        const value = context.raw;
+                        return `${datasetLabel}: ${value.toFixed(2)}${context.datasetIndex === 1 ? '%' : ''}`;
+                    }
+                }
+            },
+            title: {
+                display: true,
+                text: `Rendimiento por Competencia - ${evalName}`
+            }
         }
     }
-}
 });
 }
 
@@ -5725,7 +5826,15 @@ function renderTimelinePage() {
                 elements.competencesFile.addEventListener('change', eventHandlers.competencesFileChange);
             }
             if (elements.loadFilesBtn) {
-                elements.loadFilesBtn.addEventListener('click', eventHandlers.loadFiles);
+                // Eliminar listeners previos para evitar duplicados
+                const newBtn = elements.loadFilesBtn.cloneNode(true);
+                elements.loadFilesBtn.parentNode.replaceChild(newBtn, elements.loadFilesBtn);
+                elements.loadFilesBtn = newBtn;
+                elements.loadFilesBtn.addEventListener('click', function(e) {
+                    console.log('Botón Cargar Archivos presionado');
+                    utils.showMessage('Intentando cargar archivos...', 'info');
+                    eventHandlers.loadFiles(e);
+                });
             }
             
             // Event listeners para configuración
@@ -5776,6 +5885,15 @@ function renderTimelinePage() {
             if (elements.studentSearch) {
                 elements.studentSearch.addEventListener('input', eventHandlers.searchStudent);
             }
+            
+            // Event listeners para filtros de reporte individual
+            if (elements.individualStartDate || elements.individualEndDate) {
+                // Se inicializan los datepickers en la función initializeDatepickers
+                // Los event listeners se agregan allí
+            }
+            
+            // Event listeners para filtros de grupo
+           
             
             // Event listeners para filtros de reporte individual
             if (elements.individualStartDate || elements.individualEndDate) {
@@ -5875,6 +5993,236 @@ function renderTimelinePage() {
 
         // Iniciar la aplicación cuando el DOM esté cargado
         document.addEventListener('DOMContentLoaded', initApp);
-    </script>
+
+        // 1. MODAL PARA ASOCIAR COMPETENCIAS
+        if (!document.getElementById('competenceModal')) {
+            const competenceModal = document.createElement('div');
+            competenceModal.id = 'competenceModal';
+            competenceModal.style.display = 'none';
+            competenceModal.style.position = 'fixed';
+            competenceModal.style.top = '0';
+            competenceModal.style.left = '0';
+            competenceModal.style.width = '100vw';
+            competenceModal.style.height = '100vh';
+            competenceModal.style.background = 'rgba(0,0,0,0.4)';
+            competenceModal.style.zIndex = '2000';
+            competenceModal.innerHTML = `
+              <div id="competenceModalContent" style="background:#fff;max-width:400px;margin:60px auto;padding:24px 20px;border-radius:8px;box-shadow:0 2px 16px #0002;position:relative;">
+                <h3>Asociar competencias</h3>
+                <div id="competenceModalList" style="max-height:250px;overflow:auto;margin:16px 0;"></div>
+                <div style="text-align:right;margin-top:10px;">
+                  <button id="competenceModalCancel" class="btn btn-warning btn-sm">Cancelar</button>
+                  <button id="competenceModalSave" class="btn btn-success btn-sm">Guardar</button>
+                </div>
+              </div>            let competencesToShow = utils.getUniqueCompetences();
+            if (filterCompetences.length > 0) {
+                competencesToShow = competencesToShow.filter(comp => filterCompetences.includes(comp));
+            }            let competencesToShow = utils.getUniqueCompetences();
+            if (filterCompetences.length > 0) {
+                competencesToShow = competencesToShow.filter(comp => filterCompetences.includes(comp));
+            }            let competencesToShow = utils.getUniqueCompetences();
+            if (filterCompetences.length > 0) {
+                competencesToShow = competencesToShow.filter(comp => filterCompetences.includes(comp));
+            }            let competencesToShow = utils.getUniqueCompetences();
+            if (filterCompetences.length > 0) {
+                competencesToShow = competencesToShow.filter(comp => filterCompetences.includes(comp));
+            }            let competencesToShow = utils.getUniqueCompetences();
+            if (filterCompetences.length > 0) {
+                competencesToShow = competencesToShow.filter(comp => filterCompetences.includes(comp));
+            }            let competencesToShow = utils.getUniqueCompetences();
+            if (filterCompetences.length > 0) {
+                competencesToShow = competencesToShow.filter(comp => filterCompetences.includes(comp));
+            }            let competencesToShow = utils.getUniqueCompetences();
+            if (filterCompetences.length > 0) {
+                competencesToShow = competencesToShow.filter(comp => filterCompetences.includes(comp));
+            }            let competencesToShow = utils.getUniqueCompetences();
+            if (filterCompetences.length > 0) {
+                competencesToShow = competencesToShow.filter(comp => filterCompetences.includes(comp));
+            }            let competencesToShow = utils.getUniqueCompetences();
+            if (filterCompetences.length > 0) {
+                competencesToShow = competencesToShow.filter(comp => filterCompetences.includes(comp));
+            }
+            `;
+            document.body.appendChild(competenceModal);
+          }
+          let currentEvalForCompetence = null;
+          function openCompetenceModal(evalName) {
+            currentEvalForCompetence = evalName;
+            const list = document.getElementById('competenceModalList');
+            list.innerHTML = '';
+            const uniqueCompetences = utils.getUniqueCompetences();
+            const mapped = appState.processedData.competenceMappings[evalName] || [];
+            uniqueCompetences.forEach(comp => {
+              const id = `modal-comp-${comp.replace(/\s+/g, '-')}`;
+              const label = document.createElement('label');
+              label.style.display = 'block';
+              label.style.marginBottom = '6px';
+              const checkbox = document.createElement('input');
+              checkbox.type = 'checkbox';
+              checkbox.id = id;
+              checkbox.value = comp;
+              checkbox.checked = mapped.includes(comp);
+              label.appendChild(checkbox);
+              label.appendChild(document.createTextNode(' ' + comp));
+              list.appendChild(label);
+            });
+            document.getElementById('competenceModal').style.display = 'block';
+          }
+          document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('competenceModal');
+            if (modal) {
+              document.getElementById('competenceModalCancel').onclick = () => {
+                modal.style.display = 'none';
+                currentEvalForCompetence = null;
+              };
+              document.getElementById('competenceModalSave').onclick = () => {
+                if (!currentEvalForCompetence) return;
+                const checks = document.querySelectorAll('#competenceModalList input[type=checkbox]');
+                appState.processedData.competenceMappings[currentEvalForCompetence] = [];
+                checks.forEach(chk => {
+                  if (chk.checked) appState.processedData.competenceMappings[currentEvalForCompetence].push(chk.value);
+                });
+                modal.style.display = 'none';
+                currentEvalForCompetence = null;
+                renderCompetenceMapping && renderCompetenceMapping();
+              };
+            }
+          });
+// Crear gráfico de rendimiento por competencia en evaluación
+function renderEvaluationCompetenceChart(evalName, evalData, competences) {
+    if (!elements.evalCompetenceChart) return;
+
+    // Destruir gráfico anterior si existe
+    if (appState.charts.evalCompetenceChart) {
+        appState.charts.evalCompetenceChart.destroy();
+    }
+
+    // Calcular rendimiento por competencia en esta evaluación
+    const compPerformance = utils.calculateEvaluationCompetencePerformance(
+        appState.processedData.students, 
+        evalName
+    );
+
+    // Preparar datos para el gráfico
+    const labels = competences;
+    const averages = competences.map(comp => compPerformance[comp] ? compPerformance[comp].average : 0);
+    const passRates = competences.map(comp =>
+        compPerformance[comp] ?
+            (compPerformance[comp].passStudents / compPerformance[comp].totalStudents) * 100 :
+            0
+    );
+
+    // Crear gráfico
+    const ctx = elements.evalCompetenceChart.getContext('2d');
+    appState.charts.evalCompetenceChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Promedio',
+                    data: averages,
+                    backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Tasa de Aprobación (%)',
+                    data: passRates,
+                    backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                    borderColor: 'rgba(46, 204, 113, 1)',
+                    borderWidth: 1,
+                    type: 'line',
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Promedio'
+                    },
+                    suggestedMax: 5
+                },
+                y1: {
+                    beginAtZero: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Tasa de Aprobación (%)'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    max: 100
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Competencias'
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const datasetLabel = context.dataset.label;
+                            const value = context.raw;
+                            return `${datasetLabel}: ${value.toFixed(2)}${context.datasetIndex === 1 ? '%' : ''}`;
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: `Rendimiento por Competencia - ${evalName}`
+                }
+            }
+        }
+    });
+}
+
+// Diagnóstico para depuración del reporte grupal
+function diagnosticoReporteGrupal() {
+  try {
+    const grupo = appState.config.selectedGroup;
+    const estudiantes = appState.processedData.students || [];
+    const evaluaciones = appState.processedData.evaluations || [];
+    const pesos = appState.config.weights || {};
+    const mapeo = appState.processedData.competenceMappings || {};
+    console.log('--- DIAGNÓSTICO REPORTE GRUPAL ---');
+    console.log('Grupo seleccionado:', grupo);
+    console.log('Estudiantes procesados:', estudiantes.length);
+    console.log('Evaluaciones:', evaluaciones);
+    console.log('Pesos:', pesos);
+    console.log('Mapeo de competencias por evaluación:', mapeo);
+    console.log('-----------------------------------');
+  } catch (e) {
+    console.error('Error en diagnóstico de reporte grupal:', e);
+  }
+}
+
+// Llamar diagnóstico al cargar la pestaña de reporte grupal
+const originalGroupTabHandler = eventHandlers && eventHandlers.tabClick ? eventHandlers.tabClick : null;
+eventHandlers.tabClick = function(tabId) {
+  if (tabId === 'group') {
+    diagnosticoReporteGrupal();
+  }
+  if (originalGroupTabHandler) {
+    originalGroupTabHandler.apply(this, arguments);
+  }
+};
+</script>
 </body>
 </html>
