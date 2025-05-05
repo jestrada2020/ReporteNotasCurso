@@ -292,7 +292,7 @@
             font-size: 14px;
             display: none;
         }
-        
+
         .field-selection {
             display: flex;
             flex-wrap: wrap;
@@ -304,7 +304,7 @@
             background-color: var(--light-gray);
             border-radius: 5px;
         }
-        
+
         .field-checkbox {
             display: flex;
             align-items: center;
@@ -315,19 +315,19 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
-        
+
         .field-checkbox:hover {
             background-color: rgba(52, 152, 219, 0.1);
         }
-        
+
         .field-checkbox input {
             margin-right: 5px;
         }
-        
+
         .field-checkbox.student-id {
             background-color: rgba(46, 204, 113, 0.1);
         }
-        
+
         .field-checkbox.grade-field {
             background-color: rgba(52, 152, 219, 0.1);
         }
@@ -966,6 +966,7 @@
             <div class="tab" data-tab="group">Reporte Grupal</div>
             <div class="tab" data-tab="evaluation">Reporte por Evaluación</div>
             <div class="tab" data-tab="timeline">Línea de Tiempo</div>
+            <div class="tab" data-tab="differential">Reporte Diferencial</div>
         </div>
 
         <div id="messageContainer"></div>
@@ -1020,7 +1021,7 @@
                         <label for="semesterSelect">Semestre/Periodo</label>
                         <select id="semesterSelect">
                             <option value="2025-1">2025-1</option>
-                            
+
                         <option value="2024-2">2024-2</option>
                         <option value="2024-1">2024-1</option>
                         <option value="2023-2">2023-2</option>
@@ -1295,6 +1296,46 @@ Mapeo de Competencias a Evaluaciones
 <button id="printTimelineBtn" class="btn">Imprimir</button>
 </div>
 </div>
+
+        <!-- Tab: Reporte Diferencial -->
+        <div class="tab-content" id="differential">
+            <div class="filter-container">
+                <div class="filter-item" style="min-width: 300px;">
+                    <label for="differentialStudentSelect">Seleccionar estudiante</label>
+                    <select id="differentialStudentSelect">
+                        <option value="">Seleccione un estudiante</option>
+                        <!-- Opciones se generarán dinámicamente -->
+                    </select>
+                </div>
+                <div class="filter-item" style="min-width: 300px;">
+                    <label for="differentialEvalSelect">Seleccionar Evaluación para Feedback</label>
+                    <select id="differentialEvalSelect">
+                        <option value="">Seleccione una evaluación</option>
+                        <!-- Opciones se generarán dinámicamente -->
+                    </select>
+                </div>
+            </div>
+
+            <div id="differentialReportContainer" style="margin-top: 20px;">
+                <!-- El reporte se generará aquí -->
+                <div class="message info">Seleccione un estudiante para generar el reporte.</div>
+            </div>
+
+            <div id="differentialReportActions" style="margin-top: 20px; display: none;">
+                 <div id="feedbackContainer" style="margin-bottom: 15px;">
+                    <label for="feedbackMessage">Plantilla de Feedback (Generada por Evaluación)</label>
+                    <textarea id="feedbackMessage" rows="6" style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; margin-top: 5px; background-color: var(--light-gray);" placeholder="Seleccione una evaluación para generar la plantilla..." readonly></textarea>
+                 </div>
+
+                 <div style="margin-bottom: 15px;">
+                    <label for="felicitationMessage">Observaciones Adicionales (Manual):</label>
+                    <textarea id="felicitationMessage" rows="4" style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; margin-top: 5px;"></textarea>
+                </div>
+                <button id="previewDifferentialBtn" class="btn btn-info">Vista Previa</button>
+                <button id="exportDifferentialPdfBtn" class="btn">Exportar a PDF</button>
+                <button id="printDifferentialBtn" class="btn">Imprimir</button>
+            </div>
+        </div>
 </div>
 
 <!-- Contenedor de Previsualización -->
@@ -1337,14 +1378,16 @@ const appState = {
         semester: '2025-1',
         selectedFields: [],
         studentIdFields: []
-    },
+     },
     processedData: {
         students: [],
-        competences: [],
+        competences: [], // Ahora será [{ sheet: 'S1', competencia: 'C1', indicador: 'I1' }, ...]
         evaluations: [],
         indicators: {},
         competenceMappings: {}
     },
+    differentialReportStudentId: null, // Para el nuevo reporte
+    differentialReportSelectedEval: null, // Evaluación seleccionada para feedback
     currentStudent: null,
     charts: {},
     datepickers: {},
@@ -1447,7 +1490,13 @@ const elements = {
     cancelPreviewBtn: document.getElementById('cancelPreviewBtn'),
     confirmExportBtn: document.getElementById('confirmExportBtn'),
     loadingIndicator: document.getElementById('loadingIndicator'),
-    messageContainer: document.getElementById('messageContainer')
+    messageContainer: document.getElementById('messageContainer'),
+    differentialStudentSelect: document.getElementById('differentialStudentSelect'),
+    differentialReportContainer: document.getElementById('differentialReportContainer'),
+    differentialEvalSelect: document.getElementById('differentialEvalSelect'), // Nuevo selector
+    differentialReportActions: document.getElementById('differentialReportActions'),
+    felicitationMessage: document.getElementById('felicitationMessage'),
+    previewDifferentialBtn: document.getElementById('previewDifferentialBtn'), exportDifferentialPdfBtn: document.getElementById('exportDifferentialPdfBtn'), printDifferentialBtn: document.getElementById('printDifferentialBtn')
 };
 
 // Funciones auxiliares
@@ -1908,17 +1957,20 @@ const utils = {
     },
 
     // Obtener competencias únicas
-    getUniqueCompetences: () => {
+    getUniqueCompetences: (sheetName = null) => {
         if (!appState.processedData.competences) return [];
         const competences = new Set();
-        // Usar los datos procesados que ya tienen 'Competencia' normalizado
+
         appState.processedData.competences.forEach(c => {
-            if (c.Competencia) competences.add(c.Competencia);
+            // Filtrar por hoja si se especifica
+            if (c.Competencia && (!sheetName || c.sheet === sheetName)) {
+                competences.add(c.Competencia);
+            }
         });
-        // También añadir competencias que solo existan en el mapeo (si las hubiera)
-        Object.values(appState.processedData.competenceMappings || {}).forEach(compList => {
-            compList.forEach(comp => competences.add(comp));
-        });
+        // Ya no es necesario añadir desde el mapeo, pues todas deberían venir de processedData.competences
+        // Object.values(appState.processedData.competenceMappings || {}).forEach(compList => {
+        //     compList.forEach(comp => competences.add(comp));
+        // });
         return Array.from(competences).sort(); // Devolver ordenadas alfabéticamente
     },
 
@@ -1978,6 +2030,7 @@ const utils = {
                         .timeline-content { border-left: 3px solid #3498db; padding: 10px; background: #f9f9f9; border-radius: 4px; }
                         .timeline-date { font-size: 9pt; color: #7f8c8d; }
                         img { max-width: 100%; height: auto; } /* Para las imágenes de los gráficos */
+                        ul { padding-left: 20px; margin-top: 5px; } /* Estilo para listas en reporte diferencial */
                     </style>
                     ${content}
                 `;
@@ -2090,12 +2143,14 @@ const utils = {
                          .stat-card { border: 1px solid #eee; padding: 8px; margin-bottom: 8px; page-break-inside: avoid; }
                          .competence-item { border: 1px solid #eee; padding: 8px; margin-bottom: 8px; page-break-inside: avoid; }
                          .timeline-item { page-break-inside: avoid; margin-bottom: 10px; }
+                         ul { padding-left: 20px; margin-top: 5px; }
                     }
                     /* Estilos generales para visualización en iframe (opcional) */
                     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
                     table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
                     th, td { border: 1px solid #ccc; padding: 4px; text-align: left; }
                     th { background-color: #eee; }
+                    ul { padding-left: 20px; margin-top: 5px; }
                 </style>
             </head>
             <body>
@@ -2141,7 +2196,7 @@ const eventHandlers = {
         }
 
         // Validaciones para cambio de pestaña
-        if (['config', 'mapping', 'individual', 'group', 'evaluation', 'timeline'].includes(tabId) &&
+        if (['config', 'mapping', 'individual', 'group', 'evaluation', 'timeline', 'differential'].includes(tabId) &&
             (!appState.studentsData || !appState.competencesData)) {
             utils.showMessage('Primero debe cargar los archivos en la pestaña "Carga de Archivos".', 'warning');
             // Forzar vuelta a la pestaña de carga
@@ -2152,7 +2207,7 @@ const eventHandlers = {
             return;
         }
 
-        if (['individual', 'group', 'evaluation', 'timeline'].includes(tabId) &&
+        if (['individual', 'group', 'evaluation', 'timeline', 'differential'].includes(tabId) &&
             (!appState.processedData.students || !appState.processedData.students.length ||
              !appState.processedData.evaluations || !appState.processedData.evaluations.length ||
              Object.keys(appState.config.weights || {}).length === 0)) {
@@ -2177,7 +2232,7 @@ const eventHandlers = {
                 break;
             case 'mapping':
                 // Renderizar mapeo si ya hay datos procesados
-                if (appState.processedData.evaluations && appState.processedData.evaluations.length > 0) {
+                if (appState.processedData.evaluations?.length > 0) {
                     renderCompetenceMapping();
                 }
                 break;
@@ -2223,6 +2278,12 @@ const eventHandlers = {
                 // Renderizar línea de tiempo si hay datos
                 if (appState.processedData.students && appState.processedData.students.length > 0) {
                     renderTimelinePage(); // Renderiza selectores y la línea de tiempo
+                }
+                break;
+            case 'differential':
+                 // Renderizar selector de estudiantes si hay datos
+                if (appState.processedData.students?.length > 0) {
+                    renderDifferentialPage(); // Renderiza selector y limpia reporte
                 }
                 break;
         }
@@ -2299,6 +2360,8 @@ const eventHandlers = {
             appState.config.selectedFields = [];
             appState.config.studentIdFields = [];
             appState.currentStudent = null;
+            appState.differentialReportStudentId = null; // Limpiar también para reporte diferencial
+            appState.differentialReportSelectedEval = null; // Limpiar eval seleccionada
 
             // Configurar grupos disponibles
             if (elements.groupSelect) {
@@ -3003,6 +3066,58 @@ const eventHandlers = {
 
         renderTimeline(studentValue, competenceValue);
     },
+
+    // --- Funciones para Reporte Diferencial ---
+    selectDifferentialStudent: () => {
+        const studentId = elements.differentialStudentSelect ? elements.differentialStudentSelect.value : '';
+        appState.differentialReportStudentId = studentId; // Guardar ID seleccionado
+        appState.differentialReportSelectedEval = null; // Resetear eval seleccionada
+
+        if (studentId) {
+            renderDifferentialReport(studentId);
+            if (elements.differentialReportActions) elements.differentialReportActions.style.display = 'block';
+            if (elements.felicitationMessage) elements.felicitationMessage.value = ''; // Limpiar mensaje al cambiar estudiante
+            if (elements.feedbackMessage) elements.feedbackMessage.value = ''; // Limpiar plantilla
+            if (elements.differentialEvalSelect) elements.differentialEvalSelect.value = ''; // Resetear selector de eval
+        } else {
+            // Limpiar reporte si no hay estudiante seleccionado
+            if (elements.differentialReportContainer) {
+                elements.differentialReportContainer.innerHTML = '<div class="message info">Seleccione un estudiante para generar el reporte.</div>';
+            }
+            if (elements.differentialReportActions) elements.differentialReportActions.style.display = 'none';
+            if (elements.felicitationMessage) elements.felicitationMessage.value = '';
+            if (elements.feedbackMessage) elements.feedbackMessage.value = ''; // Limpiar plantilla
+            if (elements.differentialEvalSelect) elements.differentialEvalSelect.innerHTML = '<option value="">Seleccione una evaluación</option>'; // Limpiar selector de eval
+        }
+    },
+
+    // Nuevo handler para seleccionar evaluación en reporte diferencial
+    selectDifferentialEval: () => {
+        const evalName = elements.differentialEvalSelect ? elements.differentialEvalSelect.value : '';
+        appState.differentialReportSelectedEval = evalName;
+
+        const studentId = appState.differentialReportStudentId;
+        const student = studentId ? appState.processedData.students.find(s => s.id === studentId) : null;
+
+        if (student && evalName) {
+            generateDifferentialFeedback(student, evalName);
+        } else {
+            // Limpiar el textarea de feedback si no hay estudiante o evaluación
+            if (elements.feedbackMessage) {
+                elements.feedbackMessage.value = !student
+                    ? 'Seleccione un estudiante primero.'
+                    : 'Seleccione una evaluación para generar la plantilla.';
+            }
+        }
+    },
+
+    // --- FIN Funciones para Reporte Diferencial ---
+
+
+
+
+
+
 
     // --- Funciones de Vista Previa y Exportación ---
     // (Se mantienen similares, pero asegurándose de usar el contenido actualizado y filtros)
@@ -3878,6 +3993,76 @@ const eventHandlers = {
         utils.printContent(reportContent);
     },
 
+    // Vista previa de reporte diferencial
+    previewDifferentialReport: () => {
+        const studentId = appState.differentialReportStudentId;
+        if (!studentId) {
+            utils.showMessage('Debe seleccionar un estudiante.', 'error');
+            return;
+        }
+        const student = appState.processedData.students.find(s => s.id === studentId);
+        if (!student) return;
+
+        const felicitation = elements.felicitationMessage ? elements.felicitationMessage.value : '';
+
+        let reportContent = `<div style="padding: 20px; background: white; border-radius: 5px;">`;
+        reportContent += `
+            <div style="margin-bottom: 20px;">
+                <h2>Reporte Diferencial - ${student.Nombre}</h2>
+                <p>Grupo: ${appState.config.selectedGroup} | Semestre: ${appState.config.semester}</p>
+            </div>
+            ${felicitation ? `<div style="background: #e0f2f7; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid var(--primary-color);"><p>${felicitation.replace(/\n/g, '<br>')}</p></div>` : ''}
+            <div>
+                <h3>Detalle de Evaluaciones y Estado</h3>
+                ${generateDifferentialTableHtml(studentId)}
+            </div>
+        `;
+        reportContent += `</div>`;
+
+        utils.showPreview(
+            `Vista Previa - Reporte Diferencial ${student.Nombre}`,
+            reportContent,
+            'pdf',
+            `reporte_diferencial_${student.Nombre.replace(/\s+/g, '_')}.pdf`
+        );
+    },
+
+    // Exportar reporte diferencial a PDF
+    exportDifferentialPdf: () => {
+        const studentId = appState.differentialReportStudentId;
+        if (!studentId) return;
+        const student = appState.processedData.students.find(s => s.id === studentId);
+        if (!student) return;
+        const felicitation = elements.felicitationMessage ? elements.felicitationMessage.value : '';
+
+        let reportContent = `<div style="padding: 10mm; width: 190mm;">`; // Márgenes para PDF
+        reportContent += `<h2>Reporte Diferencial - ${student.Nombre}</h2><p>Grupo: ${appState.config.selectedGroup} | Semestre: ${appState.config.semester}</p>`;
+        // Incluir plantilla generada si existe y se seleccionó evaluación
+        const generatedFeedback = elements.feedbackMessage ? elements.feedbackMessage.value : '';
+        if (appState.differentialReportSelectedEval && generatedFeedback) reportContent += `<div style="background: #f9f9f9; border: 1px solid #eee; padding: 10px; margin: 15px 0; border-radius: 4px;"><h4>Feedback Sugerido (Evaluación: ${appState.differentialReportSelectedEval})</h4><p>${generatedFeedback.replace(/\n/g, '<br>')}</p></div>`;
+        if (felicitation) reportContent += `<div style="background: #f0f9ff; border: 1px solid #b3e5fc; padding: 10px; margin: 15px 0; border-radius: 4px;"><p>${felicitation.replace(/\n/g, '<br>')}</p></div>`;
+        reportContent += `<h3>Detalle de Evaluaciones y Estado</h3>${generateDifferentialTableHtml(studentId)}`;
+        reportContent += `</div>`;
+
+        const filename = `reporte_diferencial_${student.Nombre.replace(/\s+/g, '_')}.pdf`;
+        utils.exportToPdf(reportContent, filename);
+    },
+
+    // Imprimir reporte diferencial
+    printDifferentialReport: () => {
+        const studentId = appState.differentialReportStudentId;
+        if (!studentId) return;
+        const student = appState.processedData.students.find(s => s.id === studentId);
+        if (!student) return;
+        const felicitation = elements.felicitationMessage ? elements.felicitationMessage.value : '';
+        let reportContent = `<h2>Reporte Diferencial - ${student.Nombre}</h2><p>Grupo: ${appState.config.selectedGroup} | Semestre: ${appState.config.semester}</p>`;
+        const generatedFeedback = elements.feedbackMessage ? elements.feedbackMessage.value : '';
+        if (appState.differentialReportSelectedEval && generatedFeedback) reportContent += `<div style="background: #f9f9f9; border: 1px solid #eee; padding: 10px; margin: 15px 0; border-radius: 4px;"><h4>Feedback Sugerido (Evaluación: ${appState.differentialReportSelectedEval})</h4><p>${generatedFeedback.replace(/\n/g, '<br>')}</p></div>`;
+        if (felicitation) reportContent += `<div style="background: #f0f9ff; border: 1px solid #b3e5fc; padding: 10px; margin: 15px 0; border-radius: 4px;"><p>${felicitation.replace(/\n/g, '<br>')}</p></div>`;
+        reportContent += `<h3>Detalle de Evaluaciones y Estado</h3>${generateDifferentialTableHtml(studentId)}`;
+        utils.printContent(reportContent);
+    },
+
     // Cerrar previsualización
     closePreview: () => {
         utils.closePreview();
@@ -3895,7 +4080,7 @@ const eventHandlers = {
         const exportType = appState.exportData.type;
 
         if (exportType === 'pdf') {
-            if (filename.includes('reporte_') && !filename.includes('grupal') && !filename.includes('evaluacion')) {
+            if (filename.includes('reporte_') && !filename.includes('grupal') && !filename.includes('evaluacion') && !filename.includes('diferencial')) {
                 eventHandlers.exportIndividualPdf();
             } else if (filename.includes('grupal')) {
                 eventHandlers.exportGroupPdf();
@@ -3903,6 +4088,8 @@ const eventHandlers = {
                 eventHandlers.exportEvaluationPdf();
             } else if (filename.includes('linea_tiempo')) {
                 eventHandlers.exportTimelinePdf();
+            } else if (filename.includes('diferencial')) {
+                eventHandlers.exportDifferentialPdf();
             }
         } else if (exportType === 'excel') {
              if (filename.includes('reporte_') && !filename.includes('grupal') && !filename.includes('evaluacion')) {
@@ -3912,7 +4099,7 @@ const eventHandlers = {
             } else if (filename.includes('evaluacion')) {
                 eventHandlers.exportEvaluationExcel();
             }
-            // No hay exportación Excel para línea de tiempo por ahora
+            // No hay exportación Excel para línea de tiempo ni diferencial por ahora
         }
 
         utils.closePreview();
@@ -4378,6 +4565,113 @@ function generateTimelineHtml(studentId, competenceFilter = 'all') {
     return html;
 }
 
+// Genera HTML para la tabla del reporte diferencial
+function generateDifferentialTableHtml(studentId) {
+    // Necesitamos el objeto student completo para acceder a las notas
+    const student = appState.processedData.students.find(s => s.id === studentId);
+    if (!student) return '<p>Estudiante no encontrado.</p>';
+
+    const passingGrade = appState.config.passingGrade;
+
+    let html = `
+        <table class="grades-table" style="font-size: 0.9em;">
+            <thead>
+                <tr>
+                    <th>Evaluación</th>
+                    <th>Nota</th>
+                    <th>Estado</th>
+                    <th>Peso (%)</th>
+                    <th>Competencias Asociadas</th>
+                    <th>Criterios (Indicadores)</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    // Usar las evaluaciones configuradas (las que tienen peso)
+    const evaluations = appState.processedData.evaluations || [];
+
+    evaluations.forEach(evalName => {
+        const weight = appState.config.weights[evalName] || 0;
+        const mappedCompetences = appState.processedData.competenceMappings[evalName] || [];
+
+        let competencesHtml = mappedCompetences.length > 0 ? mappedCompetences.join(', ') : '<em>Ninguna</em>';
+
+        // Obtener nota y determinar estado
+        const gradeValue = student[evalName];
+        const grade = (gradeValue !== undefined && gradeValue !== null && gradeValue !== '' && !isNaN(parseFloat(gradeValue))) ? parseFloat(gradeValue) : null;
+        let statusHtml = '<span style="color: var(--dark-gray);">Pendiente</span>';
+        if (grade !== null) {
+            if (grade >= passingGrade) {
+                statusHtml = `<span style="color: var(--success-color); font-weight: bold;">Aprobado</span>`;
+            } else {
+                statusHtml = `<span style="color: var(--warning-color); font-weight: bold;">No Aprobado</span>`;
+            }
+        }
+
+        let criteriaHtml = '';
+
+        if (mappedCompetences.length > 0) {
+            const criteriaSet = new Set();
+            mappedCompetences.forEach(compName => {
+                const indicators = appState.processedData.indicators[compName] || [];
+                indicators.forEach(ind => criteriaSet.add(ind));
+            });
+            criteriaHtml = criteriaSet.size > 0 ? Array.from(criteriaSet).map(c => `<li>${c}</li>`).join('') : '<em>Ninguno</em>';
+        } else {
+            criteriaHtml = '<em>N/A</em>';
+        }
+
+        html += `
+            <tr>
+                <td>${evalName}</td>
+                <td>${grade !== null ? utils.formatNumber(grade) : 'N/A'}</td>
+                <td>${statusHtml}</td>
+                <td>${utils.formatNumber(weight)}%</td>
+                <td>${competencesHtml}</td>
+                <td><ul style="margin: 0; padding-left: 15px;">${criteriaHtml}</ul></td>
+            </tr>
+        `;
+    });
+
+    html += `</tbody></table>`;
+    return html;
+}
+
+// Nueva función para generar feedback basado en una evaluación específica
+function generateDifferentialFeedback(student, evalName) {
+  const mensajeEl = document.getElementById('feedbackMessage');
+  if (!mensajeEl || !student || !evalName) return;
+
+  const nombreCompleto = student.Nombre || 'Estudiante';
+  const gradeValue = student[evalName];
+  const grade = (gradeValue !== undefined && gradeValue !== null && gradeValue !== '' && !isNaN(parseFloat(gradeValue))) ? parseFloat(gradeValue) : null;
+  const competenciasAsociadas = appState.processedData.competenceMappings[evalName] || [];
+  const passingGrade = appState.config.passingGrade;
+
+  // Generar un texto con las competencias asociadas a ESTA evaluación
+  const listaCompetencias = competenciasAsociadas.length > 0
+    ? competenciasAsociadas.join(', ')
+    : 'las competencias definidas para esta evaluación';
+
+  let mensaje = '';
+
+  if (grade === null) {
+      mensaje = `El estudiante ${nombreCompleto} no tiene una calificación registrada para la evaluación "${evalName}". No se puede generar feedback automático.`;
+  } else if (grade >= passingGrade) {
+    mensaje = `¡Buen trabajo, ${nombreCompleto}! En la evaluación "${evalName}" obtuviste una nota de ${utils.formatNumber(grade)}, demostrando un buen manejo de: ${listaCompetencias}.
+
+Sigue así y continúa fortaleciendo estas habilidades.`;
+  } else {
+    mensaje = `Hola ${nombreCompleto}, tu nota en la evaluación "${evalName}" fue de ${utils.formatNumber(grade)}. Esto sugiere que necesitas reforzar los temas relacionados con: ${listaCompetencias}.
+
+Te animamos a revisar los materiales y buscar apoyo si es necesario para mejorar en estos aspectos.`;
+  }
+
+  mensajeEl.value = mensaje;
+}
+
+
 
 // --- FIN Funciones Auxiliares para Generar HTML ---
 
@@ -4592,12 +4886,13 @@ function processData() {
     // Procesar competencias (de todas las hojas del archivo de competencias)
     const allCompetencesData = [];
     if (appState.competencesData) {
-        Object.values(appState.competencesData).forEach(sheetData => {
+        Object.entries(appState.competencesData).forEach(([sheetName, sheetData]) => {
             if (Array.isArray(sheetData)) {
                 const processedSheet = sheetData.map(item => {
                     const normalizedItem = {};
                     let competenciaKey = null;
                     let indicadorKey = null;
+                    normalizedItem.sheet = sheetName; // Guardar la hoja de origen
                     // Buscar claves que contengan 'competen' o 'indica' (insensible a mayúsculas)
                     for (const key in item) {
                         const lowerKey = key.toLowerCase();
@@ -4660,6 +4955,12 @@ function processData() {
         elements.timelineStudentSelect.innerHTML = '<option value="group">Rendimiento grupal</option>' + studentOptionsHtml;
         elements.timelineStudentSelect.value = appState.filters.timeline.student || 'group'; // Restaurar selección
     }
+    // Cargar selector de estudiantes en Reporte Diferencial
+    if (elements.differentialStudentSelect) {
+        elements.differentialStudentSelect.innerHTML = '<option value="">Seleccione un estudiante</option>' + studentOptionsHtml;
+        elements.differentialStudentSelect.value = appState.differentialReportStudentId || ''; // Restaurar si existe
+    }
+
     if (elements.studentsList) { // Para reporte individual
         elements.studentsList.innerHTML = students.map(s =>
             `<div class="student-item" data-id="${s.id}">${s.Nombre}</div>`
@@ -4731,7 +5032,7 @@ function processData() {
 function renderCompetenceMapping() {
     if (!elements.competenceMappingBody || !appState.processedData.evaluations) return;
 
-    const selectedSheet = elements.competenceSheetSelect ? elements.competenceSheetSelect.value : '';
+    const selectedSheetName = elements.competenceSheetSelect ? elements.competenceSheetSelect.value : null;
     // El filtro de grupo en esta pestaña no parece usarse, lo ignoramos por ahora.
 
     // Actualizar selector de hojas si es necesario
@@ -4752,8 +5053,8 @@ function renderCompetenceMapping() {
         return;
     }
 
-    // Obtener todas las competencias únicas disponibles (independiente de la hoja seleccionada por ahora)
-    const uniqueCompetences = utils.getUniqueCompetences();
+    // Obtener competencias únicas DE LA HOJA SELECCIONADA (o todas si no hay hoja seleccionada)
+    const uniqueCompetencesForSheet = utils.getUniqueCompetences(selectedSheetName);
 
     evaluations.forEach(evalName => {
         const mappedCompetences = appState.processedData.competenceMappings[evalName] || [];
@@ -4770,7 +5071,7 @@ function renderCompetenceMapping() {
                 </div>
             </div>
             <div class="competence-selector">
-                <h5>Asociar/Desasociar Competencias:</h5>
+                <h5>Asociar/Desasociar Competencias ${selectedSheetName ? `(Hoja: ${selectedSheetName})` : '(Todas las Hojas)'}:</h5>
                 <div class="competence-checkbox-group" id="comp-mapping-group-${evalName}"></div>
             </div>
             <div style="margin-top: 10px;">
@@ -4784,10 +5085,10 @@ function renderCompetenceMapping() {
         `;
         elements.competenceMappingBody.appendChild(mappingItem);
 
-        // Añadir checkboxes para TODAS las competencias disponibles
+        // Añadir checkboxes para las competencias de la hoja seleccionada
         const competenceGroup = mappingItem.querySelector(`#comp-mapping-group-${evalName}`);
         if (competenceGroup) {
-            uniqueCompetences.forEach(comp => {
+            uniqueCompetencesForSheet.forEach(comp => {
                 const checkboxId = `mapping-comp-${evalName}-${comp.replace(/\s+/g, '-')}`;
                 const isChecked = mappedCompetences.includes(comp);
                 const checkbox = document.createElement('input');
@@ -4818,6 +5119,10 @@ function renderCompetenceMapping() {
                 }
                 competenceGroup.appendChild(label);
             });
+        }
+        // Mensaje si no hay competencias en la hoja seleccionada
+        if (selectedSheetName && uniqueCompetencesForSheet.length === 0) {
+             competenceGroup.innerHTML = `<em style='font-size: 0.9em;'>No hay competencias definidas en la hoja "${selectedSheetName}".</em>`;
         }
     });
 }
@@ -5343,6 +5648,72 @@ function renderTimeline(studentId, competenceFilter = 'all') {
     elements.evaluationTimeline.innerHTML = generateTimelineHtml(studentId, competenceFilter);
 }
 
+// Renderizar página de reporte diferencial (solo actualiza selector)
+function renderDifferentialPage() {
+    if (!elements.differentialStudentSelect) return;
+    if (!elements.differentialEvalSelect) return;
+
+    // Actualizar selector de estudiantes
+    const studentOptionsHtml = (appState.processedData.students || [])
+        .map(s => `<option value="${s.id}">${s.Nombre}</option>`).join('');
+    elements.differentialStudentSelect.innerHTML = '<option value="">Seleccione un estudiante</option>' + studentOptionsHtml;
+    elements.differentialStudentSelect.value = appState.differentialReportStudentId || ''; // Restaurar
+
+    // Limpiar selector de evaluación
+    elements.differentialEvalSelect.innerHTML = '<option value="">Seleccione una evaluación</option>';
+    appState.differentialReportSelectedEval = null;
+
+    // Limpiar plantilla de feedback
+    if (elements.feedbackMessage) {
+        elements.feedbackMessage.value = appState.differentialReportStudentId
+            ? 'Seleccione una evaluación para generar la plantilla...'
+            : 'Seleccione un estudiante primero.';
+    }
+
+    // Limpiar reporte y ocultar acciones si no hay estudiante seleccionado
+    if (!appState.differentialReportStudentId) {
+        if (elements.differentialReportContainer) elements.differentialReportContainer.innerHTML = '<div class="message info">Seleccione un estudiante para generar el reporte.</div>';
+        if (elements.differentialReportActions) elements.differentialReportActions.style.display = 'none';
+        if (elements.felicitationMessage) elements.felicitationMessage.value = '';
+    }
+}
+
+// Renderizar el contenido del reporte diferencial
+function renderDifferentialReport(studentId) {
+    if (!elements.differentialReportContainer) return;
+    const student = appState.processedData.students.find(s => s.id === studentId);
+    if (!student) {
+        elements.differentialReportContainer.innerHTML = '<div class="message error">Estudiante no encontrado.</div>';
+        return;
+    }
+
+    // Poblar el selector de evaluaciones con las evaluaciones configuradas
+    if (elements.differentialEvalSelect) {
+        const evalOptionsHtml = (appState.processedData.evaluations || [])
+            .map(ev => `<option value="${ev}">${ev}</option>`).join('');
+        elements.differentialEvalSelect.innerHTML = '<option value="">Seleccione una evaluación</option>' + evalOptionsHtml;
+        // Restaurar selección si existe o seleccionar la primera por defecto? Por ahora no.
+        elements.differentialEvalSelect.value = appState.differentialReportSelectedEval || '';
+    }
+
+    // Limpiar plantilla de feedback al renderizar el reporte (se generará al seleccionar eval)
+    if (elements.feedbackMessage) {
+        elements.feedbackMessage.value = 'Seleccione una evaluación para generar la plantilla...';
+    }
+
+    let reportContent = `
+        <div class="report-header">
+            <h2>${student.Nombre}</h2>
+            <div style="color: var(--dark-gray);">Grupo: ${appState.config.selectedGroup} | Semestre: ${appState.config.semester}</div>
+        </div>
+        <div class="report-section">
+            <h3>Detalle de Evaluaciones y Estado</h3>
+            ${generateDifferentialTableHtml(studentId)}
+        </div>
+    `;
+    elements.differentialReportContainer.innerHTML = reportContent;
+}
+
 
 // Inicializar la aplicación
 function initApp() {
@@ -5370,7 +5741,7 @@ function initApp() {
 
     // Event listeners para configuración
     elements.groupSelect?.addEventListener('change', eventHandlers.groupChange);
-    elements.competenceSheetSelect?.addEventListener('change', renderCompetenceMapping); // Hoja afecta mapeo
+    elements.competenceSheetSelect?.addEventListener('change', renderCompetenceMapping); // Ahora sí filtra
     elements.decimalPlaces?.addEventListener('input', () => {
         const value = parseInt(elements.decimalPlaces.value);
         if (!isNaN(value) && value >= 0) appState.config.decimalPlaces = value;
@@ -5409,6 +5780,11 @@ function initApp() {
     elements.timelineStudentSelect?.addEventListener('change', eventHandlers.selectTimelineStudent);
     elements.timelineCompetenceFilter?.addEventListener('change', eventHandlers.filterTimelineByCompetence);
 
+    // Event listeners para reporte diferencial
+    elements.differentialStudentSelect?.addEventListener('change', eventHandlers.selectDifferentialStudent);
+    elements.differentialEvalSelect?.addEventListener('change', eventHandlers.selectDifferentialEval); // Listener para nuevo selector
+
+
     // Event listeners para botones de exportación/impresión (agrupados por reporte)
     // Individual
     elements.previewIndividualBtn?.addEventListener('click', eventHandlers.previewIndividualReport);
@@ -5429,6 +5805,10 @@ function initApp() {
     elements.previewTimelineBtn?.addEventListener('click', eventHandlers.previewTimelineReport);
     elements.exportTimelinePdfBtn?.addEventListener('click', eventHandlers.exportTimelinePdf);
     elements.printTimelineBtn?.addEventListener('click', eventHandlers.printTimelineReport);
+    // Diferencial
+    elements.previewDifferentialBtn?.addEventListener('click', eventHandlers.previewDifferentialReport);
+    elements.exportDifferentialPdfBtn?.addEventListener('click', eventHandlers.exportDifferentialPdf);
+    elements.printDifferentialBtn?.addEventListener('click', eventHandlers.printDifferentialReport);
 
     // Event listeners para previsualización
     elements.previewClose?.addEventListener('click', eventHandlers.closePreview);
@@ -5438,7 +5818,10 @@ function initApp() {
     // Inicializar estado de botones y UI
     eventHandlers.checkFilesLoaded(); // Deshabilitar botón de carga si no hay archivos
     // Ocultar secciones de reporte inicialmente
-    // ... (código si es necesario para ocultar reportes hasta que haya datos)
+    if (elements.differentialReportActions) elements.differentialReportActions.style.display = 'none';
+    // Limpiar reportes iniciales
+    if (elements.differentialReportContainer) elements.differentialReportContainer.innerHTML = '<div class="message info">Cargue archivos y configure para ver los reportes.</div>';
+
 
     console.log("Aplicación inicializada.");
 }
@@ -5447,6 +5830,7 @@ function initApp() {
 document.addEventListener('DOMContentLoaded', initApp);
 
 
+/*
 // --- Código del Modal de Competencias (Parece estar fuera de initApp, lo dejamos así) ---
 // 1. MODAL PARA ASOCIAR COMPETENCIAS (Este código parece estar añadido al final, lo mantenemos pero revisamos)
 if (!document.getElementById('competenceModal')) {
@@ -5550,6 +5934,7 @@ if (!document.getElementById('competenceModal')) {
         }
     });
 }
+*/
 // --- FIN Código del Modal ---
 
 
