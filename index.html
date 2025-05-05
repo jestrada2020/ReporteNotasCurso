@@ -1016,6 +1016,10 @@
                             <option value="">Seleccione un grupo</option>
                         </select>
                     </div>
+                    <div class="config-item">
+                        <label for="courseNameInput">Nombre del Curso/Módulo</label>
+                        <input type="text" id="courseNameInput" placeholder="Ej: Cálculo I" value="Curso Ejemplo">
+                    </div>
 
                     <div class="config-item">
                         <label for="semesterSelect">Semestre/Periodo</label>
@@ -1314,6 +1318,14 @@ Mapeo de Competencias a Evaluaciones
                         <!-- Opciones se generarán dinámicamente -->
                     </select>
                 </div>
+                <div class="filter-item" style="min-width: 300px;">
+                    <label for="feedbackTemplateSelect">Seleccionar Plantilla de Feedback</label>
+                    <select id="feedbackTemplateSelect">
+                        <option value="">-- Sin Plantilla --</option>
+                        <!-- Opciones de plantilla se generarán dinámicamente -->
+                    </select>
+                </div>
+
             </div>
 
             <div id="differentialReportContainer" style="margin-top: 20px;">
@@ -1323,8 +1335,8 @@ Mapeo de Competencias a Evaluaciones
 
             <div id="differentialReportActions" style="margin-top: 20px; display: none;">
                  <div id="feedbackContainer" style="margin-bottom: 15px;">
-                    <label for="feedbackMessage">Plantilla de Feedback (Generada por Evaluación)</label>
-                    <textarea id="feedbackMessage" rows="6" style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; margin-top: 5px; background-color: var(--light-gray);" placeholder="Seleccione una evaluación para generar la plantilla..." readonly></textarea>
+                    <label for="feedbackMessage">Mensaje de Feedback (Editable)</label>
+                    <textarea id="feedbackMessage" rows="8" style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; margin-top: 5px; background-color: #fff;" placeholder="Seleccione una plantilla y una evaluación para generar un borrador..."></textarea>
                  </div>
 
                  <div style="margin-bottom: 15px;">
@@ -1374,6 +1386,7 @@ const appState = {
         passingGrade: 3.00,
         weights: {},
         dates: {},
+        courseName: 'Curso Ejemplo', // Nuevo campo para nombre del curso
         selectedGroup: '',
         semester: '2025-1',
         selectedFields: [],
@@ -1388,6 +1401,7 @@ const appState = {
     },
     differentialReportStudentId: null, // Para el nuevo reporte
     differentialReportSelectedEval: null, // Evaluación seleccionada para feedback
+    feedbackTemplates: {}, // Para almacenar las plantillas
     currentStudent: null,
     charts: {},
     datepickers: {},
@@ -1427,6 +1441,7 @@ const elements = {
     competencesFileInfo: document.getElementById('competencesFileInfo'),
     loadFilesBtn: document.getElementById('loadFilesBtn'),
     groupSelect: document.getElementById('groupSelect'),
+    courseNameInput: document.getElementById('courseNameInput'), // Nuevo input
     semesterSelect: document.getElementById('semesterSelect'),
     decimalPlaces: document.getElementById('decimalPlaces'),
     passingGrade: document.getElementById('passingGrade'),
@@ -1494,6 +1509,7 @@ const elements = {
     differentialStudentSelect: document.getElementById('differentialStudentSelect'),
     differentialReportContainer: document.getElementById('differentialReportContainer'),
     differentialEvalSelect: document.getElementById('differentialEvalSelect'), // Nuevo selector
+    feedbackTemplateSelect: document.getElementById('feedbackTemplateSelect'), // Selector de plantilla
     differentialReportActions: document.getElementById('differentialReportActions'),
     felicitationMessage: document.getElementById('felicitationMessage'),
     previewDifferentialBtn: document.getElementById('previewDifferentialBtn'), exportDifferentialPdfBtn: document.getElementById('exportDifferentialPdfBtn'), printDifferentialBtn: document.getElementById('printDifferentialBtn')
@@ -2732,10 +2748,12 @@ const eventHandlers = {
             return;
         }
 
-        // Guardar configuración general (decimales, nota aprobatoria, semestre)
+        // Guardar configuración general (decimales, nota aprobatoria, semestre, nombre curso)
         appState.config.decimalPlaces = parseInt(elements.decimalPlaces.value) || 2;
         appState.config.passingGrade = parseFloat(elements.passingGrade.value) || 3.00;
         appState.config.semester = elements.semesterSelect ? elements.semesterSelect.value : '2025-1';
+        appState.config.courseName = elements.courseNameInput ? elements.courseNameInput.value : 'Curso Ejemplo';
+
 
         console.log('Configuración a guardar:', appState.config);
 
@@ -3075,19 +3093,21 @@ const eventHandlers = {
 
         if (studentId) {
             renderDifferentialReport(studentId);
-            if (elements.differentialReportActions) elements.differentialReportActions.style.display = 'block';
+            if (elements.differentialReportActions) elements.differentialReportActions.style.display = 'block'; // Mostrar acciones
             if (elements.felicitationMessage) elements.felicitationMessage.value = ''; // Limpiar mensaje al cambiar estudiante
             if (elements.feedbackMessage) elements.feedbackMessage.value = ''; // Limpiar plantilla
             if (elements.differentialEvalSelect) elements.differentialEvalSelect.value = ''; // Resetear selector de eval
+            if (elements.feedbackTemplateSelect) elements.feedbackTemplateSelect.value = ''; // Resetear selector de plantilla
         } else {
             // Limpiar reporte si no hay estudiante seleccionado
             if (elements.differentialReportContainer) {
                 elements.differentialReportContainer.innerHTML = '<div class="message info">Seleccione un estudiante para generar el reporte.</div>';
             }
-            if (elements.differentialReportActions) elements.differentialReportActions.style.display = 'none';
+            if (elements.differentialReportActions) elements.differentialReportActions.style.display = 'none'; // Ocultar acciones
             if (elements.felicitationMessage) elements.felicitationMessage.value = '';
             if (elements.feedbackMessage) elements.feedbackMessage.value = ''; // Limpiar plantilla
             if (elements.differentialEvalSelect) elements.differentialEvalSelect.innerHTML = '<option value="">Seleccione una evaluación</option>'; // Limpiar selector de eval
+            if (elements.feedbackTemplateSelect) elements.feedbackTemplateSelect.innerHTML = '<option value="">-- Sin Plantilla --</option>'; // Limpiar selector de plantilla
         }
     },
 
@@ -3099,15 +3119,32 @@ const eventHandlers = {
         const studentId = appState.differentialReportStudentId;
         const student = studentId ? appState.processedData.students.find(s => s.id === studentId) : null;
 
-        if (student && evalName) {
-            generateDifferentialFeedback(student, evalName);
+        // Generar feedback solo si hay estudiante, evaluación Y plantilla seleccionada
+        const templateId = elements.feedbackTemplateSelect ? elements.feedbackTemplateSelect.value : '';
+
+        if (student && evalName && templateId) {
+            generateDifferentialFeedback(student, evalName, templateId);
         } else {
-            // Limpiar el textarea de feedback si no hay estudiante o evaluación
+            // Limpiar el textarea de feedback si falta algo
             if (elements.feedbackMessage) {
-                elements.feedbackMessage.value = !student
+                elements.feedbackMessage.readOnly = false; // Asegurar que sea editable
+                elements.feedbackMessage.value = !templateId
+                    ? 'Seleccione una plantilla de feedback.'
+                    : !student
                     ? 'Seleccione un estudiante primero.'
                     : 'Seleccione una evaluación para generar la plantilla.';
             }
+        }
+    },
+
+    // Nuevo handler para cambio de plantilla
+    selectFeedbackTemplate: () => {
+        // Volver a generar el feedback si ya hay estudiante y evaluación seleccionados
+        if (appState.differentialReportStudentId && appState.differentialReportSelectedEval) {
+            eventHandlers.selectDifferentialEval();
+        } else if (elements.feedbackMessage) {
+            // Limpiar si no hay estudiante/evaluación
+            elements.feedbackMessage.value = 'Seleccione estudiante y evaluación para generar la plantilla...';
         }
     },
 
@@ -4003,6 +4040,7 @@ const eventHandlers = {
         const student = appState.processedData.students.find(s => s.id === studentId);
         if (!student) return;
 
+        const feedbackContent = elements.feedbackMessage ? elements.feedbackMessage.value : ''; // Usar contenido actual
         const felicitation = elements.felicitationMessage ? elements.felicitationMessage.value : '';
 
         let reportContent = `<div style="padding: 20px; background: white; border-radius: 5px;">`;
@@ -4011,7 +4049,8 @@ const eventHandlers = {
                 <h2>Reporte Diferencial - ${student.Nombre}</h2>
                 <p>Grupo: ${appState.config.selectedGroup} | Semestre: ${appState.config.semester}</p>
             </div>
-            ${felicitation ? `<div style="background: #e0f2f7; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid var(--primary-color);"><p>${felicitation.replace(/\n/g, '<br>')}</p></div>` : ''}
+            ${feedbackContent ? `<div style="background: #f9f9f9; border: 1px solid #eee; padding: 10px; margin: 15px 0; border-radius: 4px;"><h4>Mensaje de Feedback</h4><p>${feedbackContent.replace(/\n/g, '<br>')}</p></div>` : ''}
+            ${felicitation ? `<div style="background: #f0f9ff; border: 1px solid #b3e5fc; padding: 10px; margin: 15px 0; border-radius: 4px;"><h4>Observaciones Adicionales</h4><p>${felicitation.replace(/\n/g, '<br>')}</p></div>` : ''}
             <div>
                 <h3>Detalle de Evaluaciones y Estado</h3>
                 ${generateDifferentialTableHtml(studentId)}
@@ -4033,14 +4072,15 @@ const eventHandlers = {
         if (!studentId) return;
         const student = appState.processedData.students.find(s => s.id === studentId);
         if (!student) return;
+        const feedbackContent = elements.feedbackMessage ? elements.feedbackMessage.value : ''; // Usar contenido actual del textarea
         const felicitation = elements.felicitationMessage ? elements.felicitationMessage.value : '';
 
         let reportContent = `<div style="padding: 10mm; width: 190mm;">`; // Márgenes para PDF
         reportContent += `<h2>Reporte Diferencial - ${student.Nombre}</h2><p>Grupo: ${appState.config.selectedGroup} | Semestre: ${appState.config.semester}</p>`;
-        // Incluir plantilla generada si existe y se seleccionó evaluación
-        const generatedFeedback = elements.feedbackMessage ? elements.feedbackMessage.value : '';
-        if (appState.differentialReportSelectedEval && generatedFeedback) reportContent += `<div style="background: #f9f9f9; border: 1px solid #eee; padding: 10px; margin: 15px 0; border-radius: 4px;"><h4>Feedback Sugerido (Evaluación: ${appState.differentialReportSelectedEval})</h4><p>${generatedFeedback.replace(/\n/g, '<br>')}</p></div>`;
-        if (felicitation) reportContent += `<div style="background: #f0f9ff; border: 1px solid #b3e5fc; padding: 10px; margin: 15px 0; border-radius: 4px;"><p>${felicitation.replace(/\n/g, '<br>')}</p></div>`;
+        // Incluir el contenido del textarea de feedback
+        if (feedbackContent) reportContent += `<div style="background: #f9f9f9; border: 1px solid #eee; padding: 10px; margin: 15px 0; border-radius: 4px;"><h4>Mensaje de Feedback</h4><p>${feedbackContent.replace(/\n/g, '<br>')}</p></div>`;
+        // Incluir felicitación/observaciones adicionales si existen
+        if (felicitation) reportContent += `<div style="background: #f0f9ff; border: 1px solid #b3e5fc; padding: 10px; margin: 15px 0; border-radius: 4px;"><h4>Observaciones Adicionales</h4><p>${felicitation.replace(/\n/g, '<br>')}</p></div>`;
         reportContent += `<h3>Detalle de Evaluaciones y Estado</h3>${generateDifferentialTableHtml(studentId)}`;
         reportContent += `</div>`;
 
@@ -4054,10 +4094,10 @@ const eventHandlers = {
         if (!studentId) return;
         const student = appState.processedData.students.find(s => s.id === studentId);
         if (!student) return;
+        const feedbackContent = elements.feedbackMessage ? elements.feedbackMessage.value : ''; // Usar contenido actual
         const felicitation = elements.felicitationMessage ? elements.felicitationMessage.value : '';
         let reportContent = `<h2>Reporte Diferencial - ${student.Nombre}</h2><p>Grupo: ${appState.config.selectedGroup} | Semestre: ${appState.config.semester}</p>`;
-        const generatedFeedback = elements.feedbackMessage ? elements.feedbackMessage.value : '';
-        if (appState.differentialReportSelectedEval && generatedFeedback) reportContent += `<div style="background: #f9f9f9; border: 1px solid #eee; padding: 10px; margin: 15px 0; border-radius: 4px;"><h4>Feedback Sugerido (Evaluación: ${appState.differentialReportSelectedEval})</h4><p>${generatedFeedback.replace(/\n/g, '<br>')}</p></div>`;
+        if (feedbackContent) reportContent += `<div style="background: #f9f9f9; border: 1px solid #eee; padding: 10px; margin: 15px 0; border-radius: 4px;"><h4>Mensaje de Feedback</h4><p>${feedbackContent.replace(/\n/g, '<br>')}</p></div>`;
         if (felicitation) reportContent += `<div style="background: #f0f9ff; border: 1px solid #b3e5fc; padding: 10px; margin: 15px 0; border-radius: 4px;"><p>${felicitation.replace(/\n/g, '<br>')}</p></div>`;
         reportContent += `<h3>Detalle de Evaluaciones y Estado</h3>${generateDifferentialTableHtml(studentId)}`;
         utils.printContent(reportContent);
@@ -4581,8 +4621,7 @@ function generateDifferentialTableHtml(studentId) {
                     <th>Nota</th>
                     <th>Estado</th>
                     <th>Peso (%)</th>
-                    <th>Competencias Asociadas</th>
-                    <th>Criterios (Indicadores)</th>
+                    <th>Competencias Asociadas</th> <!-- Columna de Criterios eliminada -->
                 </tr>
             </thead>
             <tbody>
@@ -4609,27 +4648,13 @@ function generateDifferentialTableHtml(studentId) {
             }
         }
 
-        let criteriaHtml = '';
-
-        if (mappedCompetences.length > 0) {
-            const criteriaSet = new Set();
-            mappedCompetences.forEach(compName => {
-                const indicators = appState.processedData.indicators[compName] || [];
-                indicators.forEach(ind => criteriaSet.add(ind));
-            });
-            criteriaHtml = criteriaSet.size > 0 ? Array.from(criteriaSet).map(c => `<li>${c}</li>`).join('') : '<em>Ninguno</em>';
-        } else {
-            criteriaHtml = '<em>N/A</em>';
-        }
-
         html += `
             <tr>
                 <td>${evalName}</td>
                 <td>${grade !== null ? utils.formatNumber(grade) : 'N/A'}</td>
                 <td>${statusHtml}</td>
                 <td>${utils.formatNumber(weight)}%</td>
-                <td>${competencesHtml}</td>
-                <td><ul style="margin: 0; padding-left: 15px;">${criteriaHtml}</ul></td>
+                <td>${competencesHtml}</td> <!-- Columna de Criterios eliminada -->
             </tr>
         `;
     });
@@ -4639,36 +4664,69 @@ function generateDifferentialTableHtml(studentId) {
 }
 
 // Nueva función para generar feedback basado en una evaluación específica
-function generateDifferentialFeedback(student, evalName) {
+function generateDifferentialFeedback(student, evalName, templateId) {
   const mensajeEl = document.getElementById('feedbackMessage');
-  if (!mensajeEl || !student || !evalName) return;
+  if (!mensajeEl || !student || !evalName || !templateId || !appState.feedbackTemplates[templateId]) {
+      if (mensajeEl) mensajeEl.value = 'Error: No se pudo generar el feedback (faltan datos o plantilla).';
+      return;
+  }
 
   const nombreCompleto = student.Nombre || 'Estudiante';
   const gradeValue = student[evalName];
   const grade = (gradeValue !== undefined && gradeValue !== null && gradeValue !== '' && !isNaN(parseFloat(gradeValue))) ? parseFloat(gradeValue) : null;
   const competenciasAsociadas = appState.processedData.competenceMappings[evalName] || [];
   const passingGrade = appState.config.passingGrade;
+  const courseName = appState.config.courseName || '[Nombre del Curso no definido]';
+  const evalDate = appState.config.dates[evalName] ? utils.formatDate(appState.config.dates[evalName]) : '[Fecha no definida]';
 
   // Generar un texto con las competencias asociadas a ESTA evaluación
   const listaCompetencias = competenciasAsociadas.length > 0
     ? competenciasAsociadas.join(', ')
     : 'las competencias definidas para esta evaluación';
 
-  let mensaje = '';
+  // Datos para la plantilla
+  const templateData = {
+      'Nombre Completo del Estudiante': nombreCompleto,
+      'Nota Final': grade, // Usar la nota de la evaluación como 'Nota Final' para el contexto de la plantilla
+      'Nota Final.toFixed(2)': grade !== null ? utils.formatNumber(grade) : 'N/A',
+      'Nombre del Curso/Módulo': courseName,
+      'Fecha de Evaluación': evalDate,
+      'Nombre de la Evaluación': evalName, // Añadido para posible uso
+      'Competencias Asociadas': listaCompetencias, // Añadido para posible uso
+      'passingGrade': passingGrade // Para usar en IFs simples
+      // 'dataEvaluacion': { ... } // Estructura compleja no disponible
+  };
 
-  if (grade === null) {
-      mensaje = `El estudiante ${nombreCompleto} no tiene una calificación registrada para la evaluación "${evalName}". No se puede generar feedback automático.`;
-  } else if (grade >= passingGrade) {
-    mensaje = `¡Buen trabajo, ${nombreCompleto}! En la evaluación "${evalName}" obtuviste una nota de ${utils.formatNumber(grade)}, demostrando un buen manejo de: ${listaCompetencias}.
+  // Obtener la plantilla cruda
+  const templateString = appState.feedbackTemplates[templateId].content;
 
-Sigue así y continúa fortaleciendo estas habilidades.`;
-  } else {
-    mensaje = `Hola ${nombreCompleto}, tu nota en la evaluación "${evalName}" fue de ${utils.formatNumber(grade)}. Esto sugiere que necesitas reforzar los temas relacionados con: ${listaCompetencias}.
-
-Te animamos a revisar los materiales y buscar apoyo si es necesario para mejorar en estos aspectos.`;
-  }
+  // Procesar la plantilla (reemplazo básico)
+  const mensaje = processTemplate(templateString, templateData);
 
   mensajeEl.value = mensaje;
+  mensajeEl.readOnly = false; // Hacer editable
+}
+
+// Función básica para procesar plantillas (solo reemplazo de marcadores)
+function processTemplate(templateString, data) {
+    let processed = templateString;
+
+    // Reemplazar marcadores simples [Nombre Variable]
+    for (const key in data) {
+        // Crear regex global para reemplazar todas las ocurrencias
+        // Escapar caracteres especiales en la clave para la regex
+        const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`\\[${escapedKey}\\]`, 'g');
+        processed = processed.replace(regex, data[key] !== null && data[key] !== undefined ? data[key] : '');
+    }
+
+    // --- Lógica Compleja (IF/FOR) - NO IMPLEMENTADA ---
+    // Aquí es donde iría el parseo y ejecución de [IF ...] y [FOR EACH ...]
+    // Por ahora, dejamos los marcadores [IF]/[FOR] en el texto resultante.
+    // Se podría añadir un mensaje indicando que esta parte requiere edición manual.
+
+    // Limpiar saltos de línea extra al inicio/final si es necesario
+    return processed.trim();
 }
 
 
@@ -5001,7 +5059,7 @@ function processData() {
     }
      // Filtro individual (selector)
     if (elements.individualCompetenceFilter) {
-        const select = elements.individualCompetenceFilter.querySelector('select');
+        const select = elements.individualCompetenceFilter.querySelector('select#competenceSelector');
         if (select) {
             select.innerHTML = '<option value="all">Todas las competencias</option>' + competenceOptionsHtml;
             // Restaurar selección si existe en el estado
@@ -5670,6 +5728,12 @@ function renderDifferentialPage() {
             : 'Seleccione un estudiante primero.';
     }
 
+    // Limpiar selector de plantilla
+    if (elements.feedbackTemplateSelect) {
+        elements.feedbackTemplateSelect.value = '';
+    }
+
+
     // Limpiar reporte y ocultar acciones si no hay estudiante seleccionado
     if (!appState.differentialReportStudentId) {
         if (elements.differentialReportContainer) elements.differentialReportContainer.innerHTML = '<div class="message info">Seleccione un estudiante para generar el reporte.</div>';
@@ -5696,10 +5760,14 @@ function renderDifferentialReport(studentId) {
         elements.differentialEvalSelect.value = appState.differentialReportSelectedEval || '';
     }
 
-    // Limpiar plantilla de feedback al renderizar el reporte (se generará al seleccionar eval)
+    // Limpiar plantilla de feedback al renderizar el reporte (se generará al seleccionar eval y plantilla)
     if (elements.feedbackMessage) {
-        elements.feedbackMessage.value = 'Seleccione una evaluación para generar la plantilla...';
+        elements.feedbackMessage.value = 'Seleccione una plantilla y una evaluación para generar la plantilla...';
     }
+    if (elements.feedbackTemplateSelect) {
+        elements.feedbackTemplateSelect.value = ''; // Resetear plantilla
+    }
+
 
     let reportContent = `
         <div class="report-header">
@@ -5747,6 +5815,9 @@ function initApp() {
         if (!isNaN(value) && value >= 0) appState.config.decimalPlaces = value;
         else elements.decimalPlaces.value = appState.config.decimalPlaces; // Revertir si inválido
     });
+    elements.courseNameInput?.addEventListener('input', () => { // Listener para nombre curso
+        appState.config.courseName = elements.courseNameInput.value; // Guardar nombre curso
+    });
     elements.passingGrade?.addEventListener('input', () => {
         const value = parseFloat(elements.passingGrade.value);
          if (!isNaN(value) && value >= 0 && value <= 5) appState.config.passingGrade = value; // Asumiendo max 5
@@ -5783,6 +5854,7 @@ function initApp() {
     // Event listeners para reporte diferencial
     elements.differentialStudentSelect?.addEventListener('change', eventHandlers.selectDifferentialStudent);
     elements.differentialEvalSelect?.addEventListener('change', eventHandlers.selectDifferentialEval); // Listener para nuevo selector
+    elements.feedbackTemplateSelect?.addEventListener('change', eventHandlers.selectFeedbackTemplate); // Listener para selector plantilla
 
 
     // Event listeners para botones de exportación/impresión (agrupados por reporte)
@@ -5822,6 +5894,65 @@ function initApp() {
     // Limpiar reportes iniciales
     if (elements.differentialReportContainer) elements.differentialReportContainer.innerHTML = '<div class="message info">Cargue archivos y configure para ver los reportes.</div>';
 
+    // Inicializar plantillas de feedback
+    appState.feedbackTemplates = {
+        'basico-ampliado': {
+            name: 'Básico Ampliado',
+            content: `Estimado/a **[Nombre Completo del Estudiante]**,
+
+Esperamos que este mensaje te encuentre bien.
+
+Te escribimos en relación a tu desempeño en la evaluación "[Nombre de la Evaluación]" del curso **[Nombre del Curso/Módulo]**, realizada el [Fecha de Evaluación], donde obtuviste una nota de **[Nota Final.toFixed(2)]**.
+
+**Análisis:**
+[IF Nota Final >= ${appState.config.passingGrade}]
+¡Felicitaciones por tu resultado! Has demostrado un sólido dominio de las competencias evaluadas: [Competencias Asociadas]. Tu dedicación se ve reflejada en tu nota.
+¡Excelente trabajo! Sigue con ese nivel de compromiso.
+[ELSE]
+Hemos revisado tu desempeño. Tu nota indica que hay oportunidades para fortalecer las áreas relacionadas con: [Competencias Asociadas].
+Te animamos a no desanimarte. Revisa cuidadosamente el material del curso y las actividades prácticas relacionadas con estas competencias. Busca apoyo adicional si es necesario.
+[END IF]
+
+Estamos a tu disposición para apoyarte en tu proceso.
+
+Atentamente,
+El Equipo Pedagógico`
+        },
+        'detalle-competencia': {
+            name: 'Detalle por Competencia (Simplificado)',
+            content: `**Reporte de Desempeño - Evaluación "[Nombre de la Evaluación]"**
+
+**Estudiante:** [Nombre Completo del Estudiante]
+**Curso/Módulo:** [Nombre del Curso/Módulo]
+**Fecha Evaluación:** [Fecha de Evaluación]
+**Nota Obtenida:** [Nota Final.toFixed(2)]
+
+**Resumen:**
+[IF Nota Final >= ${appState.config.passingGrade}]
+¡Felicitaciones! Tu nota en esta evaluación refleja un buen desempeño en las competencias asociadas: [Competencias Asociadas].
+[ELSE]
+Tu nota en esta evaluación sugiere que necesitas reforzar las competencias asociadas: [Competencias Asociadas].
+
+**Sugerencias (Editar manualmente según criterios específicos):**
+*   Revisa los materiales relacionados con [Competencia X].
+*   Practica ejercicios sobre [Aspecto Y].
+[END IF]
+
+Atentamente,
+El Equipo Pedagógico`
+        }
+        // Añadir aquí las otras plantillas ('reporte-estructurado', 'reporte-detallado')
+        // de forma similar, sabiendo que la lógica [IF]/[FOR] compleja no se procesará automáticamente.
+    };
+
+    // Poblar selector de plantillas
+    if (elements.feedbackTemplateSelect) {
+        elements.feedbackTemplateSelect.innerHTML = '<option value="">-- Sin Plantilla --</option>';
+        for (const id in appState.feedbackTemplates) {
+            elements.feedbackTemplateSelect.innerHTML += `<option value="${id}">${appState.feedbackTemplates[id].name}</option>`;
+        }
+    }
+
 
     console.log("Aplicación inicializada.");
 }
@@ -5830,13 +5961,104 @@ function initApp() {
 document.addEventListener('DOMContentLoaded', initApp);
 
 
-/*
-// --- Código del Modal de Competencias (Parece estar fuera de initApp, lo dejamos así) ---
-// 1. MODAL PARA ASOCIAR COMPETENCIAS (Este código parece estar añadido al final, lo mantenemos pero revisamos)
-if (!document.getElementById('competenceModal')) {
+// --- INICIO: Código del Modal para Asociar Competencias ---
+
+// Variable para guardar la evaluación actual del modal
+let currentEvalForCompetenceModal = null;
+
+// Función para abrir el modal y poblarlo
+function openCompetenceModal(evalName) {
+    currentEvalForCompetenceModal = evalName;
+    const modal = document.getElementById('competenceModal');
+    const list = document.getElementById('competenceModalList');
+    const title = document.getElementById('modalEvalName');
+    if (!modal || !list || !title) {
+        console.error("Elementos del modal no encontrados.");
+        return;
+    }
+
+    title.textContent = evalName;
+    list.innerHTML = ''; // Limpiar lista
+
+    const uniqueCompetences = utils.getUniqueCompetences(); // Usar la función utilitaria existente
+    const mapped = appState.processedData.competenceMappings[evalName] || [];
+
+    if (uniqueCompetences.length === 0) {
+        list.innerHTML = 'No hay competencias disponibles.';
+    } else {
+        uniqueCompetences.forEach(comp => {
+            const id = `modal-comp-${evalName}-${comp.replace(/[^a-zA-Z0-9]/g, '-')}`; // ID válido
+            const label = document.createElement('label');
+            label.style.display = 'block';
+            label.style.marginBottom = '8px';
+            label.style.cursor = 'pointer';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = id;
+            checkbox.value = comp;
+            checkbox.checked = mapped.includes(comp);
+            checkbox.style.marginRight = '8px';
+
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(comp));
+
+            // Añadir indicadores como tooltip
+            const indicators = appState.processedData.indicators[comp] || [];
+            if (indicators.length > 0) {
+                label.title = `Indicadores: ${indicators.join('; ')}`;
+            }
+
+            list.appendChild(label);
+        });
+    }
+    modal.style.display = 'flex'; // Mostrar modal
+}
+
+// Función para cerrar el modal
+function closeCompetenceModal() {
+    const modal = document.getElementById('competenceModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    currentEvalForCompetenceModal = null;
+}
+
+// Función para guardar los cambios del modal
+function saveCompetenceModalChanges() {
+    if (!currentEvalForCompetenceModal) return;
+
+    const checks = document.querySelectorAll('#competenceModalList input[type=checkbox]');
+    const newMappedCompetences = [];
+    checks.forEach(chk => {
+        if (chk.checked) {
+            newMappedCompetences.push(chk.value);
+        }
+    });
+
+    // Actualizar estado global
+    appState.processedData.competenceMappings[currentEvalForCompetenceModal] = newMappedCompetences;
+    console.log(`Mapeo guardado para ${currentEvalForCompetenceModal}:`, newMappedCompetences);
+
+    closeCompetenceModal();
+
+    // Re-renderizar la pestaña de mapeo si está activa para reflejar cambios
+    if (document.getElementById('mapping')?.classList.contains('active')) {
+        renderCompetenceMapping();
+    }
+    // Re-renderizar la pestaña de config si está activa (si los checkboxes allí dependen de esto)
+    // if (document.getElementById('config')?.classList.contains('active')) {
+    //     eventHandlers.fieldSelectionChange(); // O la función que refresque esa parte
+    // }
+    utils.showMessage('Mapeo de competencias actualizado.', 'success');
+}
+
+// Crear el HTML del modal y añadirlo al body (solo una vez)
+function createCompetenceModalElement() {
+    if (document.getElementById('competenceModal')) return; // Evitar duplicados
+
     const competenceModal = document.createElement('div');
     competenceModal.id = 'competenceModal';
-    // Estilos básicos para el modal
     competenceModal.style.cssText = `
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background-color: rgba(0,0,0,0.5); z-index: 2000;
@@ -5855,127 +6077,58 @@ if (!document.getElementById('competenceModal')) {
       </div>`;
     document.body.appendChild(competenceModal);
 
-    // Variable global para el modal (mejor evitar global si es posible, pero mantenemos estructura)
-    let currentEvalForCompetenceModal = null;
-
-    // Función para abrir el modal
-    window.openCompetenceModal = function(evalName) { // Hacerla global para que onclick funcione
-        currentEvalForCompetenceModal = evalName;
-        const modal = document.getElementById('competenceModal');
-        const list = document.getElementById('competenceModalList');
-        const title = document.getElementById('modalEvalName');
-        if (!modal || !list || !title) return;
-
-        title.textContent = evalName;
-        list.innerHTML = ''; // Limpiar lista
-
-        const uniqueCompetences = utils.getUniqueCompetences();
-        const mapped = appState.processedData.competenceMappings[evalName] || [];
-
-        if (uniqueCompetences.length === 0) {
-            list.innerHTML = 'No hay competencias disponibles.';
-        } else {
-            uniqueCompetences.forEach(comp => {
-                const id = `modal-comp-${evalName}-${comp.replace(/\s+/g, '-')}`;
-                const label = document.createElement('label');
-                label.style.display = 'block';
-                label.style.marginBottom = '8px';
-                label.style.cursor = 'pointer';
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = id;
-                checkbox.value = comp;
-                checkbox.checked = mapped.includes(comp);
-                checkbox.style.marginRight = '8px';
-                label.appendChild(checkbox);
-                label.appendChild(document.createTextNode(comp));
-                list.appendChild(label);
-            });
-        }
-        modal.style.display = 'flex'; // Mostrar modal (usando flex para centrar)
-    }
-
-    // Listeners para botones del modal (dentro del DOMContentLoaded para asegurar que existen)
-    document.addEventListener('DOMContentLoaded', function() {
-        const modal = document.getElementById('competenceModal');
-        if (modal) {
-            document.getElementById('competenceModalCancel').onclick = () => {
-                modal.style.display = 'none';
-                currentEvalForCompetenceModal = null;
-            };
-            document.getElementById('competenceModalSave').onclick = () => {
-                if (!currentEvalForCompetenceModal) return;
-                const checks = document.querySelectorAll('#competenceModalList input[type=checkbox]');
-                const newMappedCompetences = [];
-                checks.forEach(chk => {
-                    if (chk.checked) newMappedCompetences.push(chk.value);
-                });
-                // Actualizar estado
-                appState.processedData.competenceMappings[currentEvalForCompetenceModal] = newMappedCompetences;
-                console.log(`Mapeo guardado para ${currentEvalForCompetenceModal}:`, newMappedCompetences);
-                modal.style.display = 'none';
-                currentEvalForCompetenceModal = null;
-                // Re-renderizar la pestaña de mapeo si está activa
-                if (document.getElementById('mapping')?.classList.contains('active')) {
-                    renderCompetenceMapping();
-                }
-                 // Re-renderizar la pestaña de config si está activa (para reflejar en checkboxes allí)
-                 if (document.getElementById('config')?.classList.contains('active')) {
-                     eventHandlers.fieldSelectionChange(); // Esto debería refrescar los checkboxes en config
-                 }
-            };
-             // Cerrar modal si se hace clic fuera del contenido
-             modal.addEventListener('click', (event) => {
-                if (event.target === modal) { // Si el clic fue en el fondo oscuro
-                    modal.style.display = 'none';
-                    currentEvalForCompetenceModal = null;
-                }
-            });
+    // Añadir listeners a los botones y al fondo del modal
+    document.getElementById('competenceModalCancel').addEventListener('click', closeCompetenceModal);
+    document.getElementById('competenceModalSave').addEventListener('click', saveCompetenceModalChanges);
+    competenceModal.addEventListener('click', (event) => {
+        if (event.target === competenceModal) { // Si el clic fue en el fondo oscuro
+            closeCompetenceModal();
         }
     });
 }
-*/
-// --- FIN Código del Modal ---
 
+// Llamar a la creación del modal cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', createCompetenceModalElement);
 
-// Diagnóstico para depuración del reporte grupal (Lo dejamos como estaba)
+// --- FIN: Código del Modal para Asociar Competencias ---
 function diagnosticoReporteGrupal() {
-  try {
-    const grupo = appState.config.selectedGroup;
-    const estudiantes = appState.processedData.students || [];
-    const evaluaciones = appState.processedData.evaluations || [];
-    const pesos = appState.config.weights || {};
-    const mapeo = appState.processedData.competenceMappings || {};
-    console.log('--- DIAGNÓSTICO REPORTE GRUPAL ---');
-    console.log('Grupo seleccionado:', grupo);
-    console.log('Estudiantes procesados:', estudiantes.length);
-    console.log('Evaluaciones:', evaluaciones);
-    console.log('Pesos:', pesos);
-    console.log('Mapeo de competencias por evaluación:', mapeo);
-    console.log('Filtros Grupales Actuales:', appState.filters.group);
-    console.log('-----------------------------------');
-  } catch (e) {
-    console.error('Error en diagnóstico de reporte grupal:', e);
+    try {
+      const grupo = appState.config.selectedGroup;
+      const estudiantes = appState.processedData.students || [];
+      const evaluaciones = appState.processedData.evaluations || [];
+      const pesos = appState.config.weights || {};
+      const mapeo = appState.processedData.competenceMappings || {};
+      console.log('--- DIAGNÓSTICO REPORTE GRUPAL ---');
+      console.log('Grupo seleccionado:', grupo);
+      console.log('Estudiantes procesados:', estudiantes.length);
+      console.log('Evaluaciones:', evaluaciones);
+      console.log('Pesos:', pesos);
+      console.log('Mapeo de competencias por evaluación:', mapeo);
+      console.log('Filtros Grupales Actuales:', appState.filters.group);
+      console.log('-----------------------------------');
+    } catch (e) {
+      console.error('Error en diagnóstico de reporte grupal:', e);
+    }
   }
-}
-
-// Sobrescribir el handler de tabs para añadir el diagnóstico (si eventHandlers existe)
-if (typeof eventHandlers !== 'undefined' && eventHandlers.tabClick) {
-    const originalTabClickHandler = eventHandlers.tabClick;
-    eventHandlers.tabClick = function(e) { // Usar 'e' del evento original
-        const tabId = e.target.getAttribute('data-tab'); // Obtener tabId del evento
-        if (tabId === 'group') {
-            // Llamar diagnóstico ANTES de que el handler original intente renderizar
-            diagnosticoReporteGrupal();
-        }
-        // Llamar al handler original
-        originalTabClickHandler.call(this, e); // Pasar el evento original
-    };
-} else {
-     console.warn("eventHandlers.tabClick no está definido al intentar añadir diagnóstico.");
-}
-
-
-</script>
-</body>
-</html>
+  
+  // Sobrescribir el handler de tabs para añadir el diagnóstico (si eventHandlers existe)
+  if (typeof eventHandlers !== 'undefined' && eventHandlers.tabClick) {
+      const originalTabClickHandler = eventHandlers.tabClick;
+      eventHandlers.tabClick = function(e) { // Usar 'e' del evento original
+          const tabId = e.target.getAttribute('data-tab'); // Obtener tabId del evento
+          if (tabId === 'group') {
+              // Llamar diagnóstico ANTES de que el handler original intente renderizar
+              diagnosticoReporteGrupal();
+          }
+          // Llamar al handler original
+          originalTabClickHandler.call(this, e); // Pasar el evento original
+      };
+  } else {
+       console.warn("eventHandlers.tabClick no está definido al intentar añadir diagnóstico.");
+  }
+  
+  
+  </script>
+  </body>
+  </html>
+  
